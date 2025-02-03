@@ -1,9 +1,4 @@
-import {
-  showPrompt,
-  getTournamentNameParsed,
-  rangeIntersect,
-  getColumnLetters,
-} from "../src/utils";
+import { Utils } from "../src/utils";
 
 test("showPrompt should return user response", () => {
   // Mock the SpreadsheetApp and Logger
@@ -25,7 +20,7 @@ test("showPrompt should return user response", () => {
     log: jest.fn(),
   } as unknown as typeof Logger;
 
-  const response = showPrompt("Test Prompt");
+  const response = Utils.showPrompt("Test Prompt");
   expect(response).toBe("Test Response");
 });
 
@@ -42,18 +37,18 @@ test("getTournamentNameParsed should return tournament name", () => {
     formatDate: jest.fn().mockReturnValue("1-January-2023"),
   } as unknown as typeof Utilities;
 
-  const tournamentName = getTournamentNameParsed();
+  const tournamentName = Utils.getTournamentNameParsed();
   expect(tournamentName).toBe(
     "1-January-2023 Test Tournament Division-Test Tournament @ Test Tournament",
   );
 });
 
 test("getColumnLetters should return correct column letter", () => {
-  expect(getColumnLetters(1)).toBe("A");
-  expect(getColumnLetters(26)).toBe("Z");
-  expect(getColumnLetters(27)).toBe("AA");
-  expect(getColumnLetters(52)).toBe("AZ");
-  expect(getColumnLetters(53)).toBe("BA");
+  expect(Utils.getColumnLetters(1)).toBe("A");
+  expect(Utils.getColumnLetters(26)).toBe("Z");
+  expect(Utils.getColumnLetters(27)).toBe("AA");
+  expect(Utils.getColumnLetters(52)).toBe("AZ");
+  expect(Utils.getColumnLetters(53)).toBe("BA");
 });
 
 test("rangeIntersect should return true if ranges intersect", () => {
@@ -69,7 +64,7 @@ test("rangeIntersect should return true if ranges intersect", () => {
     getLastColumn: jest.fn().mockReturnValue(10),
     getColumn: jest.fn().mockReturnValue(3),
   } as unknown as GoogleAppsScript.Spreadsheet.Range;
-  expect(rangeIntersect(mockRange1, mockRange2)).toBe(true);
+  expect(Utils.rangeIntersect(mockRange1, mockRange2)).toBe(true);
 });
 
 test("rangeIntersect should return true if ranges intersect", () => {
@@ -85,7 +80,7 @@ test("rangeIntersect should return true if ranges intersect", () => {
     getLastColumn: jest.fn().mockReturnValue(10),
     getColumn: jest.fn().mockReturnValue(3),
   } as unknown as GoogleAppsScript.Spreadsheet.Range;
-  expect(rangeIntersect(mockRange1, mockRange2)).toBe(true);
+  expect(Utils.rangeIntersect(mockRange1, mockRange2)).toBe(true);
 });
 
 test("rangeIntersect should return false if ranges do not intersect", () => {
@@ -101,5 +96,5 @@ test("rangeIntersect should return false if ranges do not intersect", () => {
     getLastColumn: jest.fn().mockReturnValue(10),
     getColumn: jest.fn().mockReturnValue(6),
   } as unknown as GoogleAppsScript.Spreadsheet.Range;
-  expect(rangeIntersect(mockRange1, mockRange2)).toBe(false);
+  expect(Utils.rangeIntersect(mockRange1, mockRange2)).toBe(false);
 });

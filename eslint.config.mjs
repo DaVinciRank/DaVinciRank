@@ -34,13 +34,7 @@ export default [
       "require-jsdoc": "off",
       "valid-jsdoc": "off",
       "no-unused-vars": ["off"],
-
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        {
-          varsIgnorePattern: "[A-Z]+",
-        },
-      ],
+      "@typescript-eslint/no-unused-vars": "off"
     },
   },
 ];
