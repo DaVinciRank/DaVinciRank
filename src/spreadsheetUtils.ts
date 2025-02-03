@@ -1,4 +1,8 @@
-import { getTournamentNameParsed, rangeIntersect } from "./utils";
+import {
+  getTournamentNameParsed,
+  rangeIntersect,
+  getColumnLetters,
+} from "./utils";
 import {
   getParentFolderId,
   createFolderUnderRootFolder,
@@ -6,7 +10,6 @@ import {
   getTemplateFilesWithSubstring,
   removeFileIfExists,
 } from "./folderUtils";
-import { pasteLookupFormulasToScoringSheets } from "./scoringUtils";
 
 /**
  * Creates a new spreadsheet under a specific folder.
@@ -512,11 +515,72 @@ function findFirstNonMergedRow(
   );
 }
 
+/**
+ * Adds IMPORTRANGE formulas to the scoring spreadsheets.
+ * @param {Folder} targetFolder - The target folder.
+ * @param {string} targetSheetName - The name of the target sheet.
+ * @param {Spreadsheet} sourceSheet - The source sheet.
+ */
+function pasteLookupFormulasToScoringSheets(
+  targetFolder: GoogleAppsScript.Drive.Folder,
+  targetSheetName: string,
+  sourceSheet: GoogleAppsScript.Spreadsheet.Spreadsheet,
+) {
+  /*
+  Columns to pull
+  Score
+  Tier
+  Tiebreaker
+  */
+
+  var existing_ss = targetFolder.getFilesByName(targetSheetName);
+  if (existing_ss.hasNext()) {
+    var targetSheet = SpreadsheetApp.openById(existing_ss.next().getId());
+  } else {
+    return;
+  }
+
+  var sourceSheetUrl = sourceSheet.getUrl();
+
+  var columnsToTransfer = ["Score", "Tier", "Tiebreaker"];
+  var columnsToTransferIndex = ["C", "D", "E"];
+
+  for (const i in columnsToTransfer) {
+    var columnName = columnsToTransfer[i];
+    var targetColumnIndex = columnsToTransferIndex[i];
+    const cell: number[] | boolean = findCellRowAndColumnWithText(
+      sourceSheet,
+      columnName,
+    );
+
+    if (!cell || !Array.isArray(cell)) {
+      continue;
+    }
+
+    const row = cell[1];
+    const column = getColumnLetters(cell[0]);
+
+    var formula =
+      '=IMPORTRANGE("' +
+      sourceSheetUrl +
+      '", "' +
+      column +
+      row +
+      ":" +
+      column +
+      (row + 102) +
+      '")';
+    Logger.log(columnName + " " + row + " " + column + " " + formula);
+
+    targetSheet.getRange(targetColumnIndex + "2").setFormula(formula);
+  }
+}
+
 export {
   findCellRowAndColumnWithText,
   createNewSpreadSheetUnderSpecificFolder,
   duplicateProtectedSheetToNewSpreadsheet,
   findCellRowWithTextInSpreadsheet,
   findCellRowWithTextInSheet,
-  duplicateProtectedSheet
+  duplicateProtectedSheet,
 };

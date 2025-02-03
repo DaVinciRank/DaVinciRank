@@ -1,10 +1,9 @@
 import {
   showPrompt,
   getTournamentNameParsed,
-  moveRows,
   rangeIntersect,
   getColumnLetters,
-} from "../utils";
+} from "../src/utils";
 
 test("showPrompt should return user response", () => {
   // Mock the SpreadsheetApp and Logger

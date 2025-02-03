@@ -87,3 +87,4 @@ npm run push
 - https://developers.google.com/apps-script/guides/support/best-practices
 - https://gsuite-developers.googleblog.com/2015/12/advanced-development-process-with-apps.html
 - http://googleappsscript.blogspot.com/2010/06/optimizing-spreadsheet-operations.html
+- https://freedium.cfd/https://medium.com/geekculture/the-ultimate-guide-to-npm-modules-in-google-apps-script-a84545c3f57c

@@ -2,12 +2,15 @@
   "name": "davinci-rank",
   "version": "1.0.0",
   "description": "Science Olympiad Tournament Scoring System based on Google Sheets",
-  "main": "main.ts",
+  "exports": "./dist/main.js",
+  "type": "module",
+  "module": "./dist/main.js",
   "scripts": {
+    "start": "node dist/main.js",
     "clean": "gts clean",
     "lint": "npm run check",
-    "check": "gts check *.ts tests/*.ts",
-    "prettier": "prettier . test --write",
+    "check": "gts check src/*.ts tests/*.ts",
+    "prettier": "prettier src/ tests/ --write",
     "test": "jest",
     "test:coverage": "jest --forceExit --coverage --verbose",
     "test:watch": "jest --watchAll",
@@ -17,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rohanskariah/DaVinciRank.git"
+    "url": "git+https://github.com/DaVinciRank/DaVinciRank.git"
   },
   "keywords": [
     "DaVinciRank",
@@ -30,11 +33,11 @@
   "author": "Rohan Skariah",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/rohanskariah/DaVinciRank/issues"
+    "url": "https://github.com/DaVinciRank/DaVinciRank/issues"
   },
-  "homepage": "https://github.com/rohanskariah/DaVinciRank",
+  "homepage": "https://github.com/DaVinciRank/DaVinciRank",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "dependencies": {
     "@types/google-apps-script": "^1.0.92"
@@ -64,7 +67,7 @@
   },
   "nyc": {
     "include": [
-      "*.ts"
+      "src/*.ts"
     ],
     "exclude": [
       "tests/**/*.ts",
