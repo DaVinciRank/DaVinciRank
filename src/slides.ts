@@ -1,5 +1,6 @@
 import { SpreadsheetUtils } from "./spreadsheetUtils";
 import { FolderUtils } from "./folderUtils";
+import { CacheLogger } from "./cacheLogger";
 
 export class Slides {
 
@@ -89,7 +90,6 @@ export class Slides {
    * Creates one slide per row in the "Final Rankings" sheet.
    */
   static createOneSlidePerRow() {
-    // Replace <INSERT_SLIDE_DECK_ID> wih the ID of your
     // Google Slides presentation.
     const masterDeckID = Slides.findSlideShowPresentation();
     // Open the presentation and get the slides in it.
@@ -123,6 +123,8 @@ export class Slides {
 
     for (var i = eventNames.length - 1; i >= 0; i--) {
       const eventName = eventNames[i];
+      CacheLogger.appendLog("Adding slides for " + eventName);
+
       const eventData = Slides.getDataCorrespondingToEventName(
         currentSheet,
         eventName,

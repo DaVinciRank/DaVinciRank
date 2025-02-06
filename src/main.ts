@@ -23,22 +23,27 @@ function onOpen() {
 }
 
 function createEventTabs() {
+  showSidebar();
   SpreadsheetUtils.duplicateProtectedSheet();
 }
 
 function createEventSpreadsheets() {
+  showSidebar();
   ScoringUtils.createNewScoringSpreadsheets();
 }
 
 function createGradingScoresheets() {
+  showSidebar();
   SpreadsheetUtils.getTemplateFilesByEvent();
 }
 
 function shareScoringFoldersWithEmails() {
+  showSidebar();
   FolderUtils.shareScoringFoldersWithEmails();
 }
 
 function createOneSlidePerRow() {
+  showSidebar();
   Slides.createOneSlidePerRow();
 }
 
@@ -49,6 +54,7 @@ function showSidebar() {
 }
 
 function sendManyLogs() {
+  showSidebar();
   for (let i = 1; i <= 20; i++) {
   (function (logNumber) {
       Utilities.sleep(1000);

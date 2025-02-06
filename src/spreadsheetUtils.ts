@@ -254,7 +254,7 @@ export class SpreadsheetUtils {
 
     for (const j in sNames) {
       var eventName = sNames[j];
-      CacheLogger.appendLog("Adding " + eventName);
+      CacheLogger.appendLog("Adding template scoring sheet for " + eventName);
       var eventScoringFolderName =
         eventName + " Event Scoring - " + Utils.getTournamentNameParsed();
       var eventScoringFolderId = FolderUtils.createFolderUnderRootFolder(

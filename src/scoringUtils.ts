@@ -1,6 +1,7 @@
 import { Utils } from "./utils";
 import { FolderUtils } from "./folderUtils";
 import { SpreadsheetUtils } from "./spreadsheetUtils";
+import { CacheLogger } from "./cacheLogger";
 
 export class ScoringUtils {
   /**
@@ -40,6 +41,8 @@ export class ScoringUtils {
 
     for (const j in sNames) {
       var eventName = sNames[j];
+      CacheLogger.appendLog("Creating scoring sheet for " + sNames[j]);
+      
       var spreadSheetName =
         eventName + " Event Scoring - " + Utils.getTournamentNameParsed();
       var spreadSheetFolderId = FolderUtils.createFolderUnderRootFolder(

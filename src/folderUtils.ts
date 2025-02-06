@@ -1,4 +1,5 @@
 import { Utils } from "./utils";
+import { CacheLogger } from "./cacheLogger";
 
 export class FolderUtils {
   /**
@@ -147,7 +148,7 @@ export class FolderUtils {
 
     for (const j in rangeValues) {
       var eventName = rangeValues[j][0];
-      Logger.log(eventName);
+      CacheLogger.appendLog("Adding ES emails for " + eventName);
       var spreadSheetName =
         eventName + " Event Scoring - " + Utils.getTournamentNameParsed();
       var spreadSheetFolderId = FolderUtils.createFolderUnderRootFolder(
