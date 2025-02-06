@@ -10,7 +10,7 @@ export class Slides {
    */
   static findSlideShowPresentation(): string {
     var parentFolderId = FolderUtils.getParentFolderId();
-    var files = FolderUtils.getFilesUnderRootRolder(parentFolderId);
+    var files = FolderUtils.getFilesUnderRootFolder(parentFolderId);
     // var division = currentSheet.getRangeByName("Division").getValue();
     var files = FolderUtils.getTemplateFilesWithSubstring("Medals", files);
     // var files = FolderUtils.getTemplateFilesWithSubstring(division, files)
