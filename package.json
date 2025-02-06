@@ -1,0 +1,116 @@
+{
+  "name": "davinci-rank",
+  "version": "1.0.0",
+  "description": "Science Olympiad Tournament Scoring System based on Google Sheets",
+  "exports": "./dist/main.js",
+  "type": "module",
+  "module": "./dist/main.js",
+  "scripts": {
+    "start": "node dist/main.js",
+    "clean": "gts clean",
+    "lint": "npm run check",
+    "check": "gts check src/*.ts tests/*.ts",
+    "prettier": "prettier src/ tests/ --write",
+    "test": "jest",
+    "test:coverage": "jest --forceExit --coverage --verbose",
+    "test:watch": "jest --watchAll",
+    "bundle": "rollup --config",
+    "build": "npm run lint && npm run test && npm run clean && npm run bundle && cpx appsscript.json dist",
+    "push": "npm run build && clasp push"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DaVinciRank/DaVinciRank.git"
+  },
+  "keywords": [
+    "DaVinciRank",
+    "spreadsheet",
+    "science-olympiad",
+    "science-olympiad-scoring",
+    "tournament-scoring",
+    "scioly-scoring"
+  ],
+  "author": "Rohan Skariah",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/DaVinciRank/DaVinciRank/issues"
+  },
+  "homepage": "https://github.com/DaVinciRank/DaVinciRank",
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@babel/plugin-transform-runtime": "^7.25.9",
+    "@babel/preset-env": "^7.26.7",
+    "@babel/preset-typescript": "^7.26.0",
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.19.0",
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "@types/google-apps-script": "^1.0.92",
+    "@types/jest": "^29.5.14",
+    "@typescript-eslint/eslint-plugin": "^7.4.0",
+    "@typescript-eslint/parser": "^7.4.0",
+    "clean": "^4.0.2",
+    "cpx": "^1.5.0",
+    "eslint": "^8.13.0",
+    "eslint-config-prettier": "^9.1.0",
+    "gts": "^6.0.2",
+    "jest": "^29.7.0",
+    "nyc": "^17.1.0",
+    "prettier": "^3.2.5",
+    "rollup": "^4.34.0",
+    "rollup-plugin-cleanup": "^3.2.1",
+    "rollup-plugin-license": "^3.5.3",
+    "rollup-plugin-typescript2": "^0.36.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.3"
+  },
+  "nyc": {
+    "include": [
+      "src/*.ts"
+    ],
+    "exclude": [
+      "tests/**/*.ts",
+      "node_modules"
+    ],
+    "extension": [
+      ".ts"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "all": true,
+    "sourceMap": true,
+    "instrument": true
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ],
+    "transform": {
+      "^.+\\.tsx?$": [
+        "ts-jest",
+        {
+          "tsconfig": "tsconfig.json"
+        }
+      ]
+    },
+    "testMatch": [
+      "**/tests/**/*.test.(ts|js)"
+    ],
+    "reporters": [
+      "default"
+    ],
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "src/**/*.{ts,js}",
+      "!**/node_modules/**"
+    ]
+  }
+}

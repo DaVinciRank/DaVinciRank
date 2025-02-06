@@ -1,0 +1,10 @@
+node_modules/**
+dist/**
+.nyc_output/**
+build/**
+coverage/**
+tests/**
+.cache/**
+.git/**
+
+jest.config.js
