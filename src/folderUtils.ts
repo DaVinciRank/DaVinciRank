@@ -78,7 +78,7 @@ export class FolderUtils {
    * @param {string} rootFolderId - The root folder ID.
    * @returns {File[]} - All files under the root folder.
    */
-  static getFilesUnderRootRolder(rootFolderId: string) {
+  static getFilesUnderRootFolder(rootFolderId: string) {
     var rootFolder = DriveApp.getFolderById(rootFolderId);
     var files = [];
 

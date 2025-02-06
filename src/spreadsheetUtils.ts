@@ -3,6 +3,23 @@ import { FolderUtils } from "./folderUtils";
 import { CacheLogger } from "./cacheLogger";
 
 export class SpreadsheetUtils {
+    /**
+   * Retrieves the event names
+   * @returns {string[] | null} - The event names
+   */
+  static getEventNames(): string[] | null {
+    const range = SpreadsheetApp.getActive().getRangeByName("Events");
+    if (!range) {
+      SpreadsheetApp.getUi().alert('Named range "Events" not found.');
+      return null;
+    }
+    const values = range.getValues();
+    const eventNames = values.flat().filter(function (cell) {
+      return cell !== "";
+    });
+
+    return eventNames
+  }
 
   /**
    * Creates a new spreadsheet under a specific folder.
@@ -86,76 +103,91 @@ export class SpreadsheetUtils {
    * @param {string} eventName - The name of the event.
    */
   static duplicateProtectedSheet() {
-    Utils.getTournamentNameParsed();
-
-    const ss: GoogleAppsScript.Spreadsheet.Spreadsheet =
-      SpreadsheetApp.getActiveSpreadsheet();
-    const sheet: GoogleAppsScript.Spreadsheet.Sheet | null =
-      ss.getSheetByName("Blank Score Sheet");
-    if (!sheet) {
-      SpreadsheetApp.getUi().alert(
-        'Template sheet "Blank Score Sheet" not found.',
-      );
+    const startTime = new Date();
+  
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const templateSheet = ss.getSheetByName("Blank Score Sheet");
+    if (!templateSheet) {
+      SpreadsheetApp.getUi().alert('Template sheet "Blank Score Sheet" not found.');
       return;
     }
-
-    var range = SpreadsheetApp.getActive().getRangeByName("Events");
-    if (!range) {
-      SpreadsheetApp.getUi().alert('Named range "Events" not found.');
-      return;
-    }
-    var values = range.getValues();
-    var sNames = values.flat().filter(function (cell) {
-      return cell !== "";
-    });
-
-    var highLowScoreWinsRange =
-      SpreadsheetApp.getActive().getRangeByName("HighLowScoreWins");
+  
+    const highLowScoreWinsRange = ss.getRangeByName("HighLowScoreWins");
     if (!highLowScoreWinsRange) {
       SpreadsheetApp.getUi().alert('Named range "HighLowScoreWins" not found.');
       return;
     }
-    var highLowScoreWins = highLowScoreWinsRange
-      .getValues()
-      .flat()
-      .filter(function (cell) {
-        return cell !== "";
-      });
-
-    for (const j in sNames) {
-      CacheLogger.appendLog("Creating tab for " + sNames[j]);
-      // Remove the sheet if it already exists and then re-create it
-      var cur_sheet = ss.getSheetByName(sNames[j]);
-      if (cur_sheet) {
-        ss.deleteSheet(cur_sheet);
-      }
-      // Create the new sheet
-      const sheet2 = sheet.copyTo(ss).setName(sNames[j]);
-
-      // Copy over the event name
-      sheet2.getRange("L2:O2").setValue(sNames[j]);
-
-      sheet2.getRange("L4:O4").setValue(highLowScoreWins[j]);
-      sheet2.getRange("L5:O5").setValue(highLowScoreWins[j]);
-
-      // Copy over all the permissions
-      var p = sheet.getProtections(SpreadsheetApp.ProtectionType.SHEET)[0];
-      var p2 = sheet2.protect();
-      p2.setDescription(p.getDescription());
-      p2.setWarningOnly(p.isWarningOnly());
-      if (!p.isWarningOnly()) {
-        p2.removeEditors(p2.getEditors().map((editor) => editor.getEmail()));
-        p2.addEditors(p.getEditors().map((editor) => editor.getEmail()));
-      }
-      var ranges = p.getUnprotectedRanges();
-      var newRanges = [];
-      for (var i = 0; i < ranges.length; i++) {
-        newRanges.push(sheet2.getRange(ranges[i].getA1Notation()));
-      }
-      p2.setUnprotectedRanges(newRanges);
+  
+    const eventNames = SpreadsheetUtils.getEventNames();
+    if (!eventNames || eventNames.length === 0) {
+      return;
     }
+  
+    const highLowScoreWins = highLowScoreWinsRange.getValues().flat().filter(String); // More concise filtering
+  
+    // Batch delete existing sheets (if any)
+    CacheLogger.appendLog("Deleting existing event tabs");
+    const sheetsToDelete = eventNames.map(eventName => ss.getSheetByName(eventName)).filter(sheet => sheet !== null);
+    sheetsToDelete.forEach(sheet => ss.deleteSheet(sheet));
+  
+    const protections = templateSheet.getProtections(SpreadsheetApp.ProtectionType.SHEET);
+    const protection = protections.length > 0 ? protections[0] : null;
+  
+    const newSheets: GoogleAppsScript.Spreadsheet.Sheet[] = [];
+     // Array to hold data for batch set values
+    const eventNameValues: string[][] = [];
+    const highLowScoreValues: string[][] = [];
+    const highLowTierValues: string[][] = [];
+  
+    eventNames.forEach(eventName => {
+      const sheetStartTime = new Date();
+      const newSheet = templateSheet.copyTo(ss).setName(eventName);
+      newSheets.push(newSheet);
+      CacheLogger.appendLog("Created sheet for " + eventName);
+  
+      eventNameValues.push([eventName]); // Prepare data for batch setValues
+      const index = eventNames.indexOf(eventName);
+      highLowScoreValues.push([highLowScoreWins[index]]); // Prepare data for batch setValues
+      highLowTierValues.push([highLowScoreWins[index]]); // Prepare data for batch setValues
+  
+      if (protection) {
+        const sheetProtectionStartTime = new Date();
+        const newProtection = newSheet.protect();
+        newProtection.setDescription(protection.getDescription());
+        newProtection.setWarningOnly(protection.isWarningOnly());
+  
+        if (!protection.isWarningOnly()) {
+          const editors = protection.getEditors().map(editor => editor.getEmail()); // Get emails once
+          newProtection.removeEditors(newProtection.getEditors().map(editor => editor.getEmail())); // Remove all existing editors at once.
+          newProtection.addEditors(editors); // Add back the original editors
+        }
+  
+        const ranges = protection.getUnprotectedRanges();
+        const newRanges = ranges.map(range => newSheet.getRange(range.getA1Notation()));
+        newProtection.setUnprotectedRanges(newRanges);
+  
+        const sheetProtectionEndTime = new Date();
+        CacheLogger.appendLog(`Time taken for ${eventName} protection: ${(sheetProtectionEndTime.getTime() - sheetProtectionStartTime.getTime()) / 1000} seconds`, true);
+      }
+      const sheetEndTime = new Date();
+      CacheLogger.appendLog(`Time taken for ${eventName}: ${(sheetEndTime.getTime() - sheetStartTime.getTime()) / 1000} seconds`, true);
+
+    });
+  
+    // Batch setValues for event names and win conditions
+    newSheets.forEach((sheet, index) => {
+      sheet.getRange("L2").setValue(eventNameValues[index][0]);
+      sheet.getRange("L4").setValue(highLowScoreValues[index][0]);
+      sheet.getRange("L5").setValue(highLowTierValues[index][0]);
+    });
+  
+  
+    SpreadsheetApp.flush(); // Essential to apply changes before next potentially long task
     SpreadsheetUtils.forceRefreshSheetFormulas("Master Scoresheet", 32);
     SpreadsheetApp.getUi().alert("Created event tabs");
+  
+    const endTime = new Date();
+    CacheLogger.appendLog(`Total time taken: ${(endTime.getTime() - startTime.getTime()) / 1000} seconds`, true);
   }
 
   /**
@@ -169,8 +201,9 @@ export class SpreadsheetUtils {
    * @param {number} maxColumns - The maximum number of columns in the range to refresh.
    */
   static forceRefreshSheetFormulas(sheetName: string, maxColumns: number) {
-    var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = activeSpreadsheet.getSheetByName(sheetName);
+    const startTime = new Date();
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+
     if (!sheet) {
       throw new Error(`Sheet with name ${sheetName} not found.`);
     }
@@ -203,6 +236,8 @@ export class SpreadsheetUtils {
       }
     }
     SpreadsheetApp.flush();
+    const endTime = new Date();
+    CacheLogger.appendLog(`Total time taken for forceRefreshSheetFormulas: ${(endTime.getTime() - startTime.getTime()) / 1000} seconds`, true);
   }
 
   /**
@@ -233,7 +268,7 @@ export class SpreadsheetUtils {
       parentFolderId,
       Utils.getTournamentNameParsed() + " - Template Files",
     );
-    var allTemplateFiles = FolderUtils.getFilesUnderRootRolder(templateFolderId);
+    var allTemplateFiles = FolderUtils.getFilesUnderRootFolder(templateFolderId);
     if (allTemplateFiles.length == 0) {
       const htmlOutput = HtmlService.createHtmlOutput(
         '<p>Click to open <a href="' +
@@ -565,6 +600,17 @@ export class SpreadsheetUtils {
       Logger.log(columnName + " " + row + " " + column + " " + formula);
 
       targetSheet.getRange(targetColumnIndex + "2").setFormula(formula);
+    }
+  }
+
+  /**
+   * Deletes a sheet by name from active spreadsheet
+   * @param {string} sheetName - The name of the sheet.
+   */
+  static deleteSheet(sheetName: string) {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+    if (sheet) {
+      SpreadsheetApp.getActiveSpreadsheet().deleteSheet(sheet);
     }
   }
 }
