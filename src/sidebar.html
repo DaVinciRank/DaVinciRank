@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Science Olympiad Sidebar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f7f7f7;
+        }
+        .tab-container {
+            display: flex;
+            justify-content: space-around;
+            background-color: #4a90e2;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .tab {
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            background-color: #f1f1f1;
+            color: #4a90e2;
+            border: none;
+            transition: background 0.2s;
+        }
+        .tab.active {
+            background-color: #4a90e2;
+            color: white;
+        }
+        .content {
+            display: none;
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .content.active {
+            display: block;
+        }
+        button {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #27ae60;
+        }
+        #logsBox {
+            background-color: white;
+            color: black;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 250px;
+            overflow-y: auto;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+        .clear-btn {
+            background-color: #d9534f;
+        }
+        .clear-btn:hover {
+            background-color: #c9302c;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="tab-container">
+        <button class="tab active" onclick="switchTab('welcome')">Welcome</button>
+        <button class="tab" onclick="switchTab('tournament')">Tournament Functions</button>
+        <button class="tab" onclick="switchTab('logs')">Logs</button>
+    </div>
+
+    <div class="content active" id="welcome">
+        <h3>Welcome</h3>
+        <p>Welcome to the Science Olympiad Sidebar! Use the tabs above to navigate.</p>
+    </div>
+
+    <div class="content" id="tournament">
+        <h3>Tournament Functions</h3>
+        <button onclick="runTournamentFunction('createEventTabs')">1. Create Only Event Tabs</button>
+        <button onclick="runTournamentFunction('createEventSpreadsheets')">2. Create Event Spreadsheets</button>
+        <button onclick="runTournamentFunction('createGradingScoresheets')">3. Create Grading Scoresheets</button>
+        <button onclick="runTournamentFunction('shareScoringFoldersWithEmails')">4. Share Scoring Folder</button>
+        <button onclick="runTournamentFunction('createOneSlidePerRow')">5. Create Slides Presentation</button>
+    </div>
+
+    <div class="content" id="logs">
+        <h3>Logs</h3>
+        <div id="logsBox">Loading logs...</div>
+        <button class="clear-btn" onclick="clearLogMessages()">Clear Logs</button>
+    </div>
+
+    <script>
+        let lastLogCount = 0; // To track log changes
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            document.querySelector(`button[onclick="switchTab('${tabId}')"]`).classList.add('active');
+        }
+
+        function updateLogBox(logs) {
+            const logBox = document.getElementById("logsBox");
+            logBox.textContent = logs || "No logs available.";
+
+            // Auto-switch to logs tab if new entries appear
+            const logCount = (logs.match(/\n/g) || []).length;
+            if (logCount > lastLogCount) {
+                switchTab('logs'); // Auto-switch to logs tab
+            }
+            lastLogCount = logCount;
+
+            // Auto-scroll to bottom
+            setTimeout(() => {
+                logBox.scrollTop = logBox.scrollHeight;
+            }, 100); // Small delay to ensure content updates before scrolling
+        }
+
+        function fetchLogs() {
+            google.script.run.withSuccessHandler(updateLogBox).getLogs();
+        }
+
+        function clearLogMessages() {
+            google.script.run.withSuccessHandler(updateLogBox).clearLogs();
+        }
+
+        function runTournamentFunction(functionName) {
+            google.script.run.withSuccessHandler(fetchLogs)[functionName]();
+        }
+
+        window.onload = function () {
+            fetchLogs();
+            setInterval(fetchLogs, 2000);
+        };
+    </script>
+
+</body>
+</html>
