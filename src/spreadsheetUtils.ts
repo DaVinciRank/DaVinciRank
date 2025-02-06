@@ -1,5 +1,6 @@
 import { Utils } from "./utils";
 import { FolderUtils } from "./folderUtils";
+import { CacheLogger } from "./cacheLogger";
 
 export class SpreadsheetUtils {
 
@@ -122,6 +123,7 @@ export class SpreadsheetUtils {
       });
 
     for (const j in sNames) {
+      CacheLogger.appendLog("Creating tab for " + sNames[j]);
       // Remove the sheet if it already exists and then re-create it
       var cur_sheet = ss.getSheetByName(sNames[j]);
       if (cur_sheet) {
@@ -205,10 +207,9 @@ export class SpreadsheetUtils {
 
   /**
    * Retrieves template files for each event and copies them into event-specific folders.
-   * @param {string} tournamentName - The parsed full tournament name.
    */
-  static getTemplateFilesByEvent(tournamentName: string) {
-    tournamentName = Utils.getTournamentNameParsed();
+  static getTemplateFilesByEvent() {
+    const tournamentName = Utils.getTournamentNameParsed();
 
     var currentSheet = SpreadsheetApp.getActiveSpreadsheet();
     var templateSheet = currentSheet.getSheetByName("Blank Score Sheet");
@@ -253,8 +254,7 @@ export class SpreadsheetUtils {
 
     for (const j in sNames) {
       var eventName = sNames[j];
-      Logger.log(eventName);
-
+      CacheLogger.appendLog("Adding " + eventName);
       var eventScoringFolderName =
         eventName + " Event Scoring - " + Utils.getTournamentNameParsed();
       var eventScoringFolderId = FolderUtils.createFolderUnderRootFolder(
