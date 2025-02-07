@@ -8,24 +8,22 @@ export class ScoringUtils {
    * Creates new scoring spreadsheets.
    */
   static createNewScoringSpreadsheets() {
-    var currentSheet = SpreadsheetApp.getActiveSpreadsheet();
-    var templateSheet = currentSheet.getSheetByName("Blank Score Sheet");
+    const startTime = new Date();
+    const tournamentName = Utils.getTournamentNameParsed()
+
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const templateSheet = spreadsheet.getSheetByName("Blank Score Sheet");
     if (!templateSheet) {
-      SpreadsheetApp.getUi().alert("`Blank Score Sheet` sheet does not exist.");
+      SpreadsheetApp.getUi().alert('Template sheet "Blank Score Sheet" not found.');
       return;
     }
 
-    var range = currentSheet.getRangeByName("Events");
-    if (!range) {
-      SpreadsheetApp.getUi().alert("The named range 'Events' does not exist.");
+    const eventNames = SpreadsheetUtils.getEventNames();
+    if (!eventNames || eventNames.length === 0) {
       return;
     }
-    var values = range.getValues();
-    var sNames = values.flat().filter(function (cell) {
-      return cell !== "";
-    });
 
-    var teamNumbers = currentSheet.getRangeByName("Team_Numbers")?.getValues();
+    var teamNumbers = spreadsheet.getRangeByName("Team_Numbers")?.getValues();
     if (!teamNumbers || teamNumbers[0][0] == "") {
       SpreadsheetApp.getUi().alert(
         "You have not entered any team numbers. Please try again",
@@ -34,41 +32,46 @@ export class ScoringUtils {
     }
 
     var parentFolderId = FolderUtils.getParentFolderId();
-    var scoreSheetFolderId = FolderUtils.createFolderUnderRootFolder(
+    var scoreSheetFolder = FolderUtils.createFolderUnderRootFolder(
       parentFolderId,
-      Utils.getTournamentNameParsed() + " - Event Specific Score Sheets",
+      tournamentName + " - Event Specific Score Sheets",
     );
 
-    for (const j in sNames) {
-      var eventName = sNames[j];
-      CacheLogger.appendLog("Creating scoring sheet for " + sNames[j]);
+    eventNames.forEach((eventName, index) => {
+      const startEventTime = new Date();
+      CacheLogger.appendLog(`Creating scoring sheet for ${index + 1}/${eventNames.length}: ${eventName}`);
       
-      var spreadSheetName =
-        eventName + " Event Scoring - " + Utils.getTournamentNameParsed();
-      var spreadSheetFolderId = FolderUtils.createFolderUnderRootFolder(
-        scoreSheetFolderId,
+      var spreadSheetName = eventName + " Event Scoring - " + tournamentName;
+      var spreadSheetFolder = FolderUtils.createFolderUnderRootFolder(
+        scoreSheetFolder,
         spreadSheetName,
       );
-      var spreadSheetId = SpreadsheetUtils.createNewSpreadSheetUnderSpecificFolder(
-        spreadSheetFolderId,
+      var newSpreadSheet: GoogleAppsScript.Spreadsheet.Spreadsheet = SpreadsheetUtils.createNewSpreadSheetUnderSpecificFolder(
+        spreadSheetFolder,
         spreadSheetName,
       );
-      var newSheet = SpreadsheetUtils.duplicateProtectedSheetToNewSpreadsheet(
+      var newSpreadSheetSheet: GoogleAppsScript.Spreadsheet.Sheet = SpreadsheetUtils.duplicateProtectedSheetToNewSpreadsheet(
         templateSheet,
-        spreadSheetId,
+        newSpreadSheet,
         eventName,
       );
-      Utils.moveRows(templateSheet, newSheet, eventName);
+      Utils.moveRows(templateSheet, newSpreadSheetSheet, eventName);
+
       ScoringUtils.pasteLookupFormulasToSourceScoringSheets(
-        currentSheet,
-        SpreadsheetApp.openById(spreadSheetId).getUrl(),
+        spreadsheet,
+        newSpreadSheet.getUrl(),
         eventName,
       );
-    }
+
+      const endEventTime = new Date();
+      CacheLogger.appendLog(`Total time taken for ${eventName}: ${(endEventTime.getTime() - startEventTime.getTime()) / 1000} seconds`, true);
+    });
+
+    SpreadsheetApp.flush();
 
     const htmlOutput = HtmlService.createHtmlOutput(
       '<p>Click to view <a href="' +
-        DriveApp.getFolderById(scoreSheetFolderId).getUrl() +
+        scoreSheetFolder.getUrl() +
         '" target="_blank">' +
         "Event ScoreSheets" +
         "</a></p>",
@@ -77,8 +80,10 @@ export class ScoringUtils {
       .setHeight(100);
     SpreadsheetApp.getUi().showModalDialog(
       htmlOutput,
-      "Created " + sNames.length + " Event Sheets for Scoring",
+      "Created " + eventNames.length + " Event Sheets for Scoring",
     );
+    const endTime = new Date();
+    CacheLogger.appendLog(`Total time taken: ${(endTime.getTime() - startTime.getTime()) / 1000} seconds`, true);
   }
 
   /**

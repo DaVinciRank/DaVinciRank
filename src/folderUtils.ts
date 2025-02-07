@@ -4,34 +4,31 @@ import { CacheLogger } from "./cacheLogger";
 export class FolderUtils {
   /**
    * Retrieves the ID of the parent folder of the current spreadsheet.
-   * @returns {string} - The ID of the parent folder.
+   * @returns {GoogleAppsScript.Drive.Folder} - The ID of the parent folder.
    */
-  static getParentFolderId(): string {
+  static getParentFolderId(): GoogleAppsScript.Drive.Folder {
     var spreadsheetId = SpreadsheetApp.getActiveSpreadsheet().getId();
     var spreadsheetFile = DriveApp.getFileById(spreadsheetId);
-    var folderId = spreadsheetFile.getParents().next().getId();
-    return folderId;
+    return spreadsheetFile.getParents().next();
   }
 
   /**
    * Creates a folder under the specified root folder.
-   * @param {string} rootFolderId - The ID of the root folder.
+   * @param {GoogleAppsScript.Drive.Folder} rootFolder - The root folder
    * @param {string} folderName - The name of the folder to create.
-   * @returns {string} - The ID of the created folder.
+   * @returns {GoogleAppsScript.Drive.Folder} - The created folder
    */
   static createFolderUnderRootFolder(
-    rootFolderId: string,
+    rootFolder: GoogleAppsScript.Drive.Folder,
     folderName: string,
-  ): string {
-    var rootFolder = DriveApp.getFolderById(rootFolderId);
-
+  ): GoogleAppsScript.Drive.Folder {
     const folderIterator = rootFolder.getFoldersByName(folderName);
     if (folderIterator.hasNext()) {
       // When the folder exists
-      return folderIterator.next().getId();
+      return folderIterator.next();
     } else {
       // When the folder doesn't exist
-      return rootFolder.createFolder(folderName).getId();
+      return rootFolder.createFolder(folderName);
     }
   }
 
@@ -75,15 +72,12 @@ export class FolderUtils {
 
   /**
    * Gets all files under a root folder.
-   * @param {string} rootFolderId - The root folder ID.
+   * @param {string} rootFolder - The root folder
    * @returns {File[]} - All files under the root folder.
    */
-  static getFilesUnderRootFolder(rootFolderId: string) {
-    var rootFolder = DriveApp.getFolderById(rootFolderId);
+  static getFilesUnderRootFolder(rootFolder: GoogleAppsScript.Drive.Folder) {
     var files = [];
-
     var filesIterator = rootFolder.getFiles();
-
     while (filesIterator.hasNext()) {
       // Iterate through the files
       var file = filesIterator.next();
@@ -94,11 +88,10 @@ export class FolderUtils {
 
   /**
    * Adds editors to a folder if not already added.
-   * @param {string} folderId - The folder ID.
+   * @param {GoogleAppsScript.Drive.Folder} folder - The folder.
    * @param {string[]} emails - The email addresses of the editors.
    */
-  static addEditorToFolder(folderId: string, emails: string[]) {
-    var folder = DriveApp.getFolderById(folderId);
+  static addEditorToFolder(folder: GoogleAppsScript.Drive.Folder, emails: string[]) {
     var existingEditors = folder.getEditors().map(function (editor) {
       return editor.getEmail();
     });
@@ -140,9 +133,9 @@ export class FolderUtils {
       return subList[0] !== "";
     });
 
-    var parentFolderId = FolderUtils.getParentFolderId();
-    var scoreSheetFolderId = FolderUtils.createFolderUnderRootFolder(
-      parentFolderId,
+    var parentFolder = FolderUtils.getParentFolderId();
+    var scoreSheetFolder = FolderUtils.createFolderUnderRootFolder(
+      parentFolder,
       Utils.getTournamentNameParsed() + " - Event Specific Score Sheets",
     );
 
@@ -151,11 +144,11 @@ export class FolderUtils {
       CacheLogger.appendLog("Adding ES emails for " + eventName);
       var spreadSheetName =
         eventName + " Event Scoring - " + Utils.getTournamentNameParsed();
-      var spreadSheetFolderId = FolderUtils.createFolderUnderRootFolder(
-        scoreSheetFolderId,
+      var spreadSheetFolder = FolderUtils.createFolderUnderRootFolder(
+        scoreSheetFolder,
         spreadSheetName,
       );
-      FolderUtils.addEditorToFolder(spreadSheetFolderId, rangeValues[j].slice(1, 4));
+      FolderUtils.addEditorToFolder(spreadSheetFolder, rangeValues[j].slice(1, 4));
     }
   }
 

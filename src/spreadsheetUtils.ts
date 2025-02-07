@@ -23,23 +23,21 @@ export class SpreadsheetUtils {
 
   /**
    * Creates a new spreadsheet under a specific folder.
-   * @param {string} folderId - The folder ID.
+   * @param {GoogleAppsScript.Drive.Folder} folder - The folder.
    * @param {string} spreadSheetName - The name of the spreadsheet.
-   * @returns {string} - The ID of the new spreadsheet.
+   * @returns {GoogleAppsScript.Spreadsheet.Spreadsheet} - New spreadsheet.
    */
   static createNewSpreadSheetUnderSpecificFolder(
-    folderId: string,
+    folder: GoogleAppsScript.Drive.Folder,
     spreadSheetName: string,
-  ): string {
-    const folder: GoogleAppsScript.Drive.Folder =
-      DriveApp.getFolderById(folderId);
+  ): GoogleAppsScript.Spreadsheet.Spreadsheet {
     var existing_ss = folder.getFilesByName(spreadSheetName);
     if (existing_ss.hasNext()) {
       DriveApp.getFileById(existing_ss.next().getId()).setTrashed(true);
     }
     var ss = SpreadsheetApp.create(spreadSheetName);
     DriveApp.getFileById(ss.getId()).moveTo(folder);
-    return ss.getId();
+    return ss;
   }
 
   /**
@@ -67,16 +65,15 @@ export class SpreadsheetUtils {
    */
   static duplicateProtectedSheetToNewSpreadsheet(
     templateSheet: GoogleAppsScript.Spreadsheet.Sheet,
-    spreadSheetId: string,
+    newSpreadSheet: GoogleAppsScript.Spreadsheet.Spreadsheet,
     sheetTabName: string,
   ): GoogleAppsScript.Spreadsheet.Sheet {
-    var ss = SpreadsheetApp.openById(spreadSheetId);
-
     // Create the new sheet
-    var sheet2 = templateSheet.copyTo(ss).setName(sheetTabName);
+    var newSpreadsheetSheet = templateSheet.copyTo(newSpreadSheet).setName(sheetTabName);
+
     // Copy over all the permissions
     var p = templateSheet.getProtections(SpreadsheetApp.ProtectionType.SHEET)[0];
-    var p2 = sheet2.protect();
+    var p2 = newSpreadsheetSheet.protect();
     p2.setDescription(p.getDescription());
     p2.setWarningOnly(p.isWarningOnly());
     if (!p.isWarningOnly()) {
@@ -86,16 +83,16 @@ export class SpreadsheetUtils {
     var ranges = p.getUnprotectedRanges();
     var newRanges = [];
     for (const range of ranges) {
-      newRanges.push(sheet2.getRange(range.getA1Notation()));
+      newRanges.push(newSpreadsheetSheet.getRange(range.getA1Notation()));
     }
     p2.setUnprotectedRanges(newRanges);
 
-    var blank_sheet = ss.getSheetByName("Sheet1");
+    var blank_sheet = newSpreadSheet.getSheetByName("Sheet1");
     if (blank_sheet) {
-      ss.deleteSheet(blank_sheet);
+      newSpreadSheet.deleteSheet(blank_sheet);
     }
 
-    return sheet2;
+    return newSpreadsheetSheet;
   }
 
   /**
@@ -105,16 +102,10 @@ export class SpreadsheetUtils {
   static duplicateProtectedSheet() {
     const startTime = new Date();
   
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const templateSheet = ss.getSheetByName("Blank Score Sheet");
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const templateSheet = spreadsheet.getSheetByName("Blank Score Sheet");
     if (!templateSheet) {
       SpreadsheetApp.getUi().alert('Template sheet "Blank Score Sheet" not found.');
-      return;
-    }
-  
-    const highLowScoreWinsRange = ss.getRangeByName("HighLowScoreWins");
-    if (!highLowScoreWinsRange) {
-      SpreadsheetApp.getUi().alert('Named range "HighLowScoreWins" not found.');
       return;
     }
   
@@ -123,12 +114,18 @@ export class SpreadsheetUtils {
       return;
     }
   
+    const highLowScoreWinsRange = spreadsheet.getRangeByName("HighLowScoreWins");
+    if (!highLowScoreWinsRange) {
+      SpreadsheetApp.getUi().alert('Named range "HighLowScoreWins" not found.');
+      return;
+    }
     const highLowScoreWins = highLowScoreWinsRange.getValues().flat().filter(String); // More concise filtering
   
+
     // Batch delete existing sheets (if any)
     CacheLogger.appendLog("Deleting existing event tabs");
-    const sheetsToDelete = eventNames.map(eventName => ss.getSheetByName(eventName)).filter(sheet => sheet !== null);
-    sheetsToDelete.forEach(sheet => ss.deleteSheet(sheet));
+    const sheetsToDelete = eventNames.map(eventName => spreadsheet.getSheetByName(eventName)).filter(sheet => sheet !== null);
+    sheetsToDelete.forEach(sheet => spreadsheet.deleteSheet(sheet));
   
     const protections = templateSheet.getProtections(SpreadsheetApp.ProtectionType.SHEET);
     const protection = protections.length > 0 ? protections[0] : null;
@@ -141,7 +138,7 @@ export class SpreadsheetUtils {
   
     eventNames.forEach(eventName => {
       const sheetStartTime = new Date();
-      const newSheet = templateSheet.copyTo(ss).setName(eventName);
+      const newSheet = templateSheet.copyTo(spreadsheet).setName(eventName);
       newSheets.push(newSheet);
       CacheLogger.appendLog("Created sheet for " + eventName);
   
@@ -258,21 +255,21 @@ export class SpreadsheetUtils {
       return cell !== "";
     });
 
-    var parentFolderId = FolderUtils.getParentFolderId();
+    var parentFolder = FolderUtils.getParentFolderId();
     var scoreSheetFolderId = FolderUtils.createFolderUnderRootFolder(
-      parentFolderId,
+      parentFolder,
       Utils.getTournamentNameParsed() + " - Event Specific Score Sheets",
     );
 
-    var templateFolderId = FolderUtils.createFolderUnderRootFolder(
-      parentFolderId,
+    var templateFolder = FolderUtils.createFolderUnderRootFolder(
+      parentFolder,
       Utils.getTournamentNameParsed() + " - Template Files",
     );
-    var allTemplateFiles = FolderUtils.getFilesUnderRootFolder(templateFolderId);
+    var allTemplateFiles = FolderUtils.getFilesUnderRootFolder(templateFolder);
     if (allTemplateFiles.length == 0) {
       const htmlOutput = HtmlService.createHtmlOutput(
         '<p>Click to open <a href="' +
-          DriveApp.getFolderById(templateFolderId).getUrl() +
+          templateFolder.getUrl() +
           '" target="_blank">' +
           Utils.getTournamentNameParsed() +
           " - Template Files" +
@@ -292,11 +289,10 @@ export class SpreadsheetUtils {
       CacheLogger.appendLog("Adding template scoring sheet for " + eventName);
       var eventScoringFolderName =
         eventName + " Event Scoring - " + Utils.getTournamentNameParsed();
-      var eventScoringFolderId = FolderUtils.createFolderUnderRootFolder(
+      var eventScoringFolder = FolderUtils.createFolderUnderRootFolder(
         scoreSheetFolderId,
         eventScoringFolderName,
       );
-      var eventScoringFolder = DriveApp.getFolderById(eventScoringFolderId);
 
       var templateFiles = FolderUtils.getTemplateFilesWithSubstring(
         eventName,
@@ -569,16 +565,21 @@ export class SpreadsheetUtils {
 
     var sourceSheetUrl = sourceSheet.getUrl();
 
-    var columnsToTransfer = ["Score", "Tier", "Tiebreaker"];
+    // Add permutations
+    var columnsToTransfer = [["Score", "Raw Score"], ["Tier", "Tiers"], ["Tiebreaker", "Tie Break"]];
     var columnsToTransferIndex = ["C", "D", "E"];
 
     for (const i in columnsToTransfer) {
-      var columnName = columnsToTransfer[i];
+      var columnNames = columnsToTransfer[i];
       var targetColumnIndex = columnsToTransferIndex[i];
-      const cell: number[] | boolean = SpreadsheetUtils.findCellRowAndColumnWithText(
-        sourceSheet,
-        columnName,
-      );
+      let cell: number[] | boolean = false;
+
+      for (const columnName of columnNames) {
+        cell = SpreadsheetUtils.findCellRowAndColumnWithText(sourceSheet, columnName);
+        if (cell && Array.isArray(cell)) {
+          break;
+        }
+      }
 
       if (!cell || !Array.isArray(cell)) {
         continue;
@@ -597,8 +598,6 @@ export class SpreadsheetUtils {
         column +
         (row + 102) +
         '")';
-      Logger.log(columnName + " " + row + " " + column + " " + formula);
-
       targetSheet.getRange(targetColumnIndex + "2").setFormula(formula);
     }
   }
