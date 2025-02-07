@@ -21,11 +21,10 @@ function onOpen() {
       .addSeparator()
       .addSubMenu(
         ui.createMenu('Debugging Only')
-        .addItem("Enable Debug Logs", "enableDebugLogs")
-        .addItem("Disable Debug Logs", "disableDebugLogs")
         .addItem("Delete Event Tabs", "deleteEventTabs")
         .addItem('Test: Send Many Logger', 'sendManyLogs')
     ).addToUi();
+    closeSidebar();
 }
 
 function createEventTabs() {
@@ -88,10 +87,32 @@ function deleteEventTabs() {
   }
 }
 
-function showSidebar() {
-  var html = HtmlService.createHtmlOutputFromFile("sidebar")
-    .setTitle("Log Messages");
-  SpreadsheetApp.getUi().showSidebar(html);
+function showSidebar(force: boolean = false) {
+  const cache = CacheService.getDocumentCache();
+  var sidebarStatus: string | null = 'on'
+  if (cache) {
+    sidebarStatus = cache.get('sidebar');
+  }
+  if (sidebarStatus !== 'on' || force) {
+    var html = HtmlService.createHtmlOutputFromFile("sidebar")
+      .setTitle("Log Messages");
+    SpreadsheetApp.getUi().showSidebar(html);
+  }
+  openSidebar();
+}
+
+function openSidebar() {
+  const cache = CacheService.getDocumentCache();
+  if (cache) {
+    cache.put('sidebar', 'on', 11);
+  }
+}
+
+function closeSidebar() {
+  const cache = CacheService.getDocumentCache();
+  if (cache) {
+    cache.put('sidebar', 'off', 11);
+  }
 }
 
 function sendManyLogs() {
@@ -114,6 +135,15 @@ function getLogs(): string {
 
 function clearLogs(): string {
   return CacheLogger.clearLogs();
+}
+
+function toggleDebugMode(enable: boolean): boolean {
+  CacheLogger.setDebugMode(enable);
+  return CacheLogger.isDebugMode();
+}
+
+function isDebugMode(): boolean {
+  return CacheLogger.isDebugMode();
 }
 
 function enableDebugLogs() {
