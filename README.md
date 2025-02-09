@@ -20,6 +20,8 @@
 
 ## Usage
 
+[Coming Soon]
+
 ### Create Only Event Tabs
 
 ### Create Event Spreadsheets
@@ -64,7 +66,7 @@ This pushes any local code to the google scripts project
 clasp push
 ```
 
-# Deveopment
+# Development
 
 ## Prerequisites
 
@@ -77,7 +79,7 @@ clasp push
 ### Clone the repository
 
 ```
-git clone https://github.com/rohanskariah/DaVinciRank
+git clone https://github.com/DaVinciRank/DaVinciRank.git
 ```
 
 ### Install dependencies
