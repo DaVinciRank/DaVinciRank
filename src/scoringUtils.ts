@@ -9,12 +9,14 @@ export class ScoringUtils {
    */
   static createNewScoringSpreadsheets() {
     const startTime = new Date();
-    const tournamentName = Utils.getTournamentNameParsed()
+    const tournamentName = Utils.getTournamentNameParsed();
 
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const templateSheet = spreadsheet.getSheetByName("Blank Score Sheet");
     if (!templateSheet) {
-      SpreadsheetApp.getUi().alert('Template sheet "Blank Score Sheet" not found.');
+      SpreadsheetApp.getUi().alert(
+        'Template sheet "Blank Score Sheet" not found.',
+      );
       return;
     }
 
@@ -32,29 +34,33 @@ export class ScoringUtils {
     }
 
     var parentFolderId = FolderUtils.getParentFolderId();
-    var scoreSheetFolder = FolderUtils.createFolderUnderRootFolder(
+    var scoreSheetFolder = FolderUtils.findOrCreateFolderUnderRootFolder(
       parentFolderId,
-      tournamentName + " - Event Specific Score Sheets",
+      "Event Specific Score Sheets - " + tournamentName,
     );
 
     eventNames.forEach((eventName, index) => {
       const startEventTime = new Date();
-      CacheLogger.appendLog(`Creating scoring sheet for ${index + 1}/${eventNames.length}: ${eventName}`);
-      
+      CacheLogger.appendLog(
+        `Creating scoring sheet for ${index + 1}/${eventNames.length}: ${eventName}`,
+      );
+
       var spreadSheetName = eventName + " Event Scoring - " + tournamentName;
-      var spreadSheetFolder = FolderUtils.createFolderUnderRootFolder(
+      var spreadSheetFolder = FolderUtils.findOrCreateFolderUnderRootFolder(
         scoreSheetFolder,
         spreadSheetName,
       );
-      var newSpreadSheet: GoogleAppsScript.Spreadsheet.Spreadsheet = SpreadsheetUtils.createNewSpreadSheetUnderSpecificFolder(
-        spreadSheetFolder,
-        spreadSheetName,
-      );
-      var newSpreadSheetSheet: GoogleAppsScript.Spreadsheet.Sheet = SpreadsheetUtils.duplicateProtectedSheetToNewSpreadsheet(
-        templateSheet,
-        newSpreadSheet,
-        eventName,
-      );
+      var newSpreadSheet: GoogleAppsScript.Spreadsheet.Spreadsheet =
+        SpreadsheetUtils.createNewSpreadSheetUnderSpecificFolder(
+          spreadSheetFolder,
+          spreadSheetName,
+        );
+      var newSpreadSheetSheet: GoogleAppsScript.Spreadsheet.Sheet =
+        SpreadsheetUtils.duplicateProtectedSheetToNewSpreadsheet(
+          templateSheet,
+          newSpreadSheet,
+          eventName,
+        );
       Utils.moveRows(templateSheet, newSpreadSheetSheet, eventName);
 
       ScoringUtils.pasteLookupFormulasToSourceScoringSheets(
@@ -64,7 +70,10 @@ export class ScoringUtils {
       );
 
       const endEventTime = new Date();
-      CacheLogger.appendLog(`Total time taken for ${eventName}: ${(endEventTime.getTime() - startEventTime.getTime()) / 1000} seconds`, true);
+      CacheLogger.appendLog(
+        `Total time taken for ${eventName}: ${(endEventTime.getTime() - startEventTime.getTime()) / 1000} seconds`,
+        true,
+      );
     });
 
     SpreadsheetApp.flush();
@@ -83,7 +92,10 @@ export class ScoringUtils {
       "Created " + eventNames.length + " Event Sheets for Scoring",
     );
     const endTime = new Date();
-    CacheLogger.appendLog(`Total time taken: ${(endTime.getTime() - startTime.getTime()) / 1000} seconds`, true);
+    CacheLogger.appendLog(
+      `Total time taken: ${(endTime.getTime() - startTime.getTime()) / 1000} seconds`,
+      true,
+    );
   }
 
   /**

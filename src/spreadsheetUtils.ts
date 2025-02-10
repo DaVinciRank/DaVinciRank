@@ -3,7 +3,7 @@ import { FolderUtils } from "./folderUtils";
 import { CacheLogger } from "./cacheLogger";
 
 export class SpreadsheetUtils {
-    /**
+  /**
    * Retrieves the event names
    * @returns {string[] | null} - The event names
    */
@@ -18,7 +18,7 @@ export class SpreadsheetUtils {
       return cell !== "";
     });
 
-    return eventNames
+    return eventNames;
   }
 
   /**
@@ -69,10 +69,14 @@ export class SpreadsheetUtils {
     sheetTabName: string,
   ): GoogleAppsScript.Spreadsheet.Sheet {
     // Create the new sheet
-    var newSpreadsheetSheet = templateSheet.copyTo(newSpreadSheet).setName(sheetTabName);
+    var newSpreadsheetSheet = templateSheet
+      .copyTo(newSpreadSheet)
+      .setName(sheetTabName);
 
     // Copy over all the permissions
-    var p = templateSheet.getProtections(SpreadsheetApp.ProtectionType.SHEET)[0];
+    var p = templateSheet.getProtections(
+      SpreadsheetApp.ProtectionType.SHEET,
+    )[0];
     var p2 = newSpreadsheetSheet.protect();
     p2.setDescription(p.getDescription());
     p2.setWarningOnly(p.isWarningOnly());
@@ -101,90 +105,114 @@ export class SpreadsheetUtils {
    */
   static duplicateProtectedSheet() {
     const startTime = new Date();
-  
+
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const templateSheet = spreadsheet.getSheetByName("Blank Score Sheet");
     if (!templateSheet) {
-      SpreadsheetApp.getUi().alert('Template sheet "Blank Score Sheet" not found.');
+      SpreadsheetApp.getUi().alert(
+        'Template sheet "Blank Score Sheet" not found.',
+      );
       return;
     }
-  
+
     const eventNames = SpreadsheetUtils.getEventNames();
     if (!eventNames || eventNames.length === 0) {
       return;
     }
-  
-    const highLowScoreWinsRange = spreadsheet.getRangeByName("HighLowScoreWins");
+
+    const highLowScoreWinsRange =
+      spreadsheet.getRangeByName("HighLowScoreWins");
     if (!highLowScoreWinsRange) {
       SpreadsheetApp.getUi().alert('Named range "HighLowScoreWins" not found.');
       return;
     }
-    const highLowScoreWins = highLowScoreWinsRange.getValues().flat().filter(String); // More concise filtering
-  
+    const highLowScoreWins = highLowScoreWinsRange
+      .getValues()
+      .flat()
+      .filter(String); // More concise filtering
 
     // Batch delete existing sheets (if any)
     CacheLogger.appendLog("Deleting existing event tabs");
-    const sheetsToDelete = eventNames.map(eventName => spreadsheet.getSheetByName(eventName)).filter(sheet => sheet !== null);
-    sheetsToDelete.forEach(sheet => spreadsheet.deleteSheet(sheet));
-  
-    const protections = templateSheet.getProtections(SpreadsheetApp.ProtectionType.SHEET);
+    const sheetsToDelete = eventNames
+      .map((eventName) => spreadsheet.getSheetByName(eventName))
+      .filter((sheet) => sheet !== null);
+    sheetsToDelete.forEach((sheet) => spreadsheet.deleteSheet(sheet));
+
+    const protections = templateSheet.getProtections(
+      SpreadsheetApp.ProtectionType.SHEET,
+    );
     const protection = protections.length > 0 ? protections[0] : null;
-  
+
     const newSheets: GoogleAppsScript.Spreadsheet.Sheet[] = [];
-     // Array to hold data for batch set values
+    // Array to hold data for batch set values
     const eventNameValues: string[][] = [];
     const highLowScoreValues: string[][] = [];
     const highLowTierValues: string[][] = [];
-  
-    eventNames.forEach(eventName => {
+
+    eventNames.forEach((eventName, index) => {
       const sheetStartTime = new Date();
+      CacheLogger.appendLog(
+        `Creating tab for ${index + 1}/${eventNames.length}:` + eventName,
+      );
+
       const newSheet = templateSheet.copyTo(spreadsheet).setName(eventName);
       newSheets.push(newSheet);
-      CacheLogger.appendLog("Created sheet for " + eventName);
-  
+
       eventNameValues.push([eventName]); // Prepare data for batch setValues
-      const index = eventNames.indexOf(eventName);
       highLowScoreValues.push([highLowScoreWins[index]]); // Prepare data for batch setValues
       highLowTierValues.push([highLowScoreWins[index]]); // Prepare data for batch setValues
-  
+
       if (protection) {
         const sheetProtectionStartTime = new Date();
         const newProtection = newSheet.protect();
         newProtection.setDescription(protection.getDescription());
         newProtection.setWarningOnly(protection.isWarningOnly());
-  
+
         if (!protection.isWarningOnly()) {
-          const editors = protection.getEditors().map(editor => editor.getEmail()); // Get emails once
-          newProtection.removeEditors(newProtection.getEditors().map(editor => editor.getEmail())); // Remove all existing editors at once.
+          const editors = protection
+            .getEditors()
+            .map((editor) => editor.getEmail()); // Get emails once
+          newProtection.removeEditors(
+            newProtection.getEditors().map((editor) => editor.getEmail()),
+          ); // Remove all existing editors at once.
           newProtection.addEditors(editors); // Add back the original editors
         }
-  
+
         const ranges = protection.getUnprotectedRanges();
-        const newRanges = ranges.map(range => newSheet.getRange(range.getA1Notation()));
+        const newRanges = ranges.map((range) =>
+          newSheet.getRange(range.getA1Notation()),
+        );
         newProtection.setUnprotectedRanges(newRanges);
-  
+
         const sheetProtectionEndTime = new Date();
-        CacheLogger.appendLog(`Time taken for ${eventName} protection: ${(sheetProtectionEndTime.getTime() - sheetProtectionStartTime.getTime()) / 1000} seconds`, true);
+        CacheLogger.appendLog(
+          `Time taken for ${eventName} protection: ${(sheetProtectionEndTime.getTime() - sheetProtectionStartTime.getTime()) / 1000} seconds`,
+          true,
+        );
       }
       const sheetEndTime = new Date();
-      CacheLogger.appendLog(`Time taken for ${eventName}: ${(sheetEndTime.getTime() - sheetStartTime.getTime()) / 1000} seconds`, true);
-
+      CacheLogger.appendLog(
+        `Time taken for ${eventName}: ${(sheetEndTime.getTime() - sheetStartTime.getTime()) / 1000} seconds`,
+        true,
+      );
     });
-  
+
     // Batch setValues for event names and win conditions
     newSheets.forEach((sheet, index) => {
       sheet.getRange("L2").setValue(eventNameValues[index][0]);
       sheet.getRange("L4").setValue(highLowScoreValues[index][0]);
       sheet.getRange("L5").setValue(highLowTierValues[index][0]);
     });
-  
-  
+
     SpreadsheetApp.flush(); // Essential to apply changes before next potentially long task
     SpreadsheetUtils.forceRefreshSheetFormulas("Master Scoresheet", 32);
     SpreadsheetApp.getUi().alert("Created event tabs");
-  
+
     const endTime = new Date();
-    CacheLogger.appendLog(`Total time taken: ${(endTime.getTime() - startTime.getTime()) / 1000} seconds`, true);
+    CacheLogger.appendLog(
+      `Total time taken: ${(endTime.getTime() - startTime.getTime()) / 1000} seconds`,
+      true,
+    );
   }
 
   /**
@@ -234,7 +262,10 @@ export class SpreadsheetUtils {
     }
     SpreadsheetApp.flush();
     const endTime = new Date();
-    CacheLogger.appendLog(`Total time taken for forceRefreshSheetFormulas: ${(endTime.getTime() - startTime.getTime()) / 1000} seconds`, true);
+    CacheLogger.appendLog(
+      `Total time taken for forceRefreshSheetFormulas: ${(endTime.getTime() - startTime.getTime()) / 1000} seconds`,
+      true,
+    );
   }
 
   /**
@@ -251,19 +282,21 @@ export class SpreadsheetUtils {
       SpreadsheetApp.getUi().alert('Named range "Events" not found.');
       return;
     }
-    var sNames = values.flat().filter(function (cell) {
+    var eventNames = values.flat().filter(function (cell) {
       return cell !== "";
     });
 
     var parentFolder = FolderUtils.getParentFolderId();
-    var scoreSheetFolderId = FolderUtils.createFolderUnderRootFolder(
+    var scoreSheetFolderId = FolderUtils.findOrCreateFolderUnderRootFolder(
       parentFolder,
-      Utils.getTournamentNameParsed() + " - Event Specific Score Sheets",
+      "Event Specific Score Sheets - " + tournamentName,
     );
 
-    var templateFolder = FolderUtils.createFolderUnderRootFolder(
+    const templateFolder = FolderUtils.findOrCreateFolderUnderRootFolder(
       parentFolder,
-      Utils.getTournamentNameParsed() + " - Template Files",
+      "Template Files - " + tournamentName,
+      "Template File",
+      currentSheet.getRangeByName("Division")?.getValue(),
     );
     var allTemplateFiles = FolderUtils.getFilesUnderRootFolder(templateFolder);
     if (allTemplateFiles.length == 0) {
@@ -271,8 +304,8 @@ export class SpreadsheetUtils {
         '<p>Click to open <a href="' +
           templateFolder.getUrl() +
           '" target="_blank">' +
-          Utils.getTournamentNameParsed() +
-          " - Template Files" +
+          "Template Files - " +
+          tournamentName +
           "</a></p>",
       )
         .setWidth(800)
@@ -284,12 +317,14 @@ export class SpreadsheetUtils {
       return;
     }
 
-    for (const j in sNames) {
-      var eventName = sNames[j];
-      CacheLogger.appendLog("Adding template scoring sheet for " + eventName);
+    eventNames.forEach((eventName, index) => {
+      CacheLogger.appendLog(
+        `Adding template files for ${index + 1}/${eventNames.length}:` +
+          eventName,
+      );
       var eventScoringFolderName =
-        eventName + " Event Scoring - " + Utils.getTournamentNameParsed();
-      var eventScoringFolder = FolderUtils.createFolderUnderRootFolder(
+        eventName + " Event Scoring - " + tournamentName;
+      var eventScoringFolder = FolderUtils.findOrCreateFolderUnderRootFolder(
         scoreSheetFolderId,
         eventScoringFolderName,
       );
@@ -307,10 +342,11 @@ export class SpreadsheetUtils {
 
         if (fileType == "application/vnd.google-apps.spreadsheet") {
           var scoreSheetName =
-            tournamentName +
-            ": " +
+            "(Use this for grading) - " +
             eventName +
-            " - Scoresheet (Use this for grading)";
+            " Event Scoring - " +
+            tournamentName;
+
           FolderUtils.removeFileIfExists(eventScoringFolder, scoreSheetName);
           var copiedFile = templateFile.makeCopy(
             scoreSheetName,
@@ -325,7 +361,7 @@ export class SpreadsheetUtils {
           }
 
           var scoringSpreadSheetName =
-            eventName + " Event Scoring - " + Utils.getTournamentNameParsed();
+            eventName + " Event Scoring - " + tournamentName;
 
           // Add IMPORTRANGE into the scoring spreadsheet
           SpreadsheetUtils.pasteLookupFormulasToScoringSheets(
@@ -334,11 +370,14 @@ export class SpreadsheetUtils {
             SpreadsheetApp.openById(copiedFile.getId()),
           );
         } else {
-          FolderUtils.removeFileIfExists(eventScoringFolder, templateFile.getName());
+          FolderUtils.removeFileIfExists(
+            eventScoringFolder,
+            templateFile.getName(),
+          );
           var copiedFile = templateFile.makeCopy(eventScoringFolder);
         }
       }
-    }
+    });
   }
 
   /**
@@ -351,7 +390,10 @@ export class SpreadsheetUtils {
     newFile: GoogleAppsScript.Drive.File,
   ) {
     const newSheet = SpreadsheetApp.openById(newFile.getId());
-    const startingRow = SpreadsheetUtils.findCellRowWithTextInSpreadsheet(newSheet, "Team #");
+    const startingRow = SpreadsheetUtils.findCellRowWithTextInSpreadsheet(
+      newSheet,
+      "Team #",
+    );
 
     if (typeof startingRow === "number") {
       newSheet
@@ -566,7 +608,11 @@ export class SpreadsheetUtils {
     var sourceSheetUrl = sourceSheet.getUrl();
 
     // Add permutations
-    var columnsToTransfer = [["Score", "Raw Score"], ["Tier", "Tiers"], ["Tiebreaker", "Tie Break"]];
+    var columnsToTransfer = [
+      ["Score", "Raw Score"],
+      ["Tier", "Tiers"],
+      ["Tiebreaker", "Tie Break"],
+    ];
     var columnsToTransferIndex = ["C", "D", "E"];
 
     for (const i in columnsToTransfer) {
@@ -575,7 +621,10 @@ export class SpreadsheetUtils {
       let cell: number[] | boolean = false;
 
       for (const columnName of columnNames) {
-        cell = SpreadsheetUtils.findCellRowAndColumnWithText(sourceSheet, columnName);
+        cell = SpreadsheetUtils.findCellRowAndColumnWithText(
+          sourceSheet,
+          columnName,
+        );
         if (cell && Array.isArray(cell)) {
           break;
         }

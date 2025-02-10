@@ -15,7 +15,7 @@
     "test:coverage": "jest --forceExit --coverage --verbose",
     "test:watch": "jest --watchAll",
     "bundle": "rollup --config",
-    "build": "npm run lint && npm run test && npm run clean && npm run bundle && cpx appsscript.json dist && cpx src/*.html dist",
+    "build": "npm run lint && npm run prettier && npm run test && npm run clean && npm run bundle && cpx appsscript.json dist && cpx src/*.html dist",
     "push": "npm run build && clasp push"
   },
   "repository": {
