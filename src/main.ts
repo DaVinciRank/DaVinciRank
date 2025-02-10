@@ -24,6 +24,7 @@ function onOpen() {
     .addSubMenu(
       ui
         .createMenu("Debugging Only")
+        .addItem("Set Default Tournament Values", "setDefaultTournamentValues")
         .addItem("Delete Event Tabs", "deleteEventTabs")
         .addItem("Test: Send Many Logger", "sendManyLogs"),
     )
@@ -54,6 +55,32 @@ function shareScoringFoldersWithEmails() {
 function createOneSlidePerRow() {
   showSidebar();
   Slides.createOneSlidePerRow();
+}
+
+function setDefaultTournamentValues() {
+  var userChoice = SpreadsheetApp.getUi().alert(
+    "Are you sure you want to set all tournament named ranges to default?",
+    SpreadsheetApp.getUi().ButtonSet.YES_NO,
+  );
+  if (userChoice == SpreadsheetApp.getUi().Button.NO) {
+    return;
+  }
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  spreadsheet
+    .getRangeByName(Constants.TOURNAMENT_NAME_RANGE_NAME)
+    ?.setValue(Constants.DEFAULT_TOURNAMENT_NAME);
+  spreadsheet
+    .getRangeByName(Constants.TOURNAMENT_DATE_RANGE_NAME)
+    ?.setValue(Constants.DEFAULT_TOURNAMENT_DATE);
+  spreadsheet
+    .getRangeByName(Constants.LOCATION_RANGE_NAME)
+    ?.setValue(Constants.DEFAULT_TOURNAMENT_LOCATION);
+  spreadsheet
+    .getRangeByName(Constants.DIVISION_RANGE_NAME)
+    ?.setValue(Constants.DEFAULT_TOURNAMENT_DIVISION);
+  spreadsheet
+    .getRangeByName(Constants.NUMBER_OF_TEAMS_RANGE_NAME)
+    ?.setValue(Constants.DEFAULT_NUMBER_OF_TEAMS);
 }
 
 function deleteEventTabs() {
@@ -319,6 +346,50 @@ function promptForMissingInfo(field: string) {
     } else {
       range.setValue(result);
     }
+  }
+}
+
+function getEventScoringFiles() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const events =
+      ss.getRangeByName("Events")?.getValues().flat().filter(String) || [];
+    const tournamentName = Utils.getTournamentNameParsed(false);
+    const scoresheetFolder = Utils.getScoreSheetFolder(false);
+
+    if (!scoresheetFolder) {
+      console.error("Scoresheet folder not created yet:");
+      return [];
+    }
+
+    return events.map((eventName) => {
+      const scoringFileName = eventName + " Event Scoring - " + tournamentName;
+      let fileUrl = null;
+
+      const folder = FolderUtils.findFolderBySubstrings(
+        scoresheetFolder,
+        eventName,
+      );
+
+      try {
+        if (folder) {
+          const files = folder.getFilesByName(scoringFileName);
+          if (files.hasNext()) {
+            fileUrl = files.next().getUrl();
+          }
+        }
+      } catch (e) {
+        console.error(`Error finding file for ${eventName}: ${e}`);
+      }
+
+      return {
+        name: eventName,
+        fileUrl: fileUrl,
+      };
+    });
+  } catch (error) {
+    console.error("Error in getEventScoringFiles:", error);
+    return [];
   }
 }
 
