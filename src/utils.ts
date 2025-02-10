@@ -1,10 +1,13 @@
+import { Constants } from "./constants";
+import { FolderUtils } from "./folderUtils";
+
 export class Utils {
   /**
    * Displays a prompt to the user and returns the response.
    * @param {string} prompt - The prompt message.
    * @returns {string} - The user's response.
    */
-  static showPrompt(prompt: string): string {
+  static showPrompt(prompt: string): string | null {
     var ui = SpreadsheetApp.getUi();
 
     var result = ui.prompt(
@@ -20,7 +23,7 @@ export class Utils {
       Logger.log(response);
       return response;
     } else {
-      return Utils.showPrompt(prompt);
+      return null;
     }
   }
 
@@ -28,63 +31,64 @@ export class Utils {
    * Retrieves the parsed full tournament name based on the spreadsheet data.
    * @returns {string} - The full tournament name.
    */
-  static getTournamentNameParsed(): string {
+  static getTournamentNameParsed(prompt_user: boolean = true): string {
     var currentSheet = SpreadsheetApp.getActiveSpreadsheet();
     if (!currentSheet) {
       throw new Error("No active spreadsheet found.");
     }
 
-    var tournamentName = currentSheet
-      .getRangeByName("TournamentName")
-      ?.getValue();
-    if (tournamentName == "" || tournamentName == "Tournament Name") {
+    var tournamentName = Utils.getTournamentName();
+    if (!tournamentName && prompt_user) {
       tournamentName = Utils.showPrompt(
         "You have not entered a tournament name. Please enter one now",
       );
-      currentSheet.getRangeByName("TournamentName")?.setValue(tournamentName);
+      currentSheet
+        .getRangeByName(Constants.TOURNAMENT_NAME_RANGE_NAME)
+        ?.setValue(tournamentName);
     }
 
-    var tournamentDate = currentSheet
-      .getRangeByName("TournamentDate")
-      ?.getValue();
-    var parsedDate = Utilities.formatDate(
-      tournamentDate,
-      "America/Los_Angeles",
-      "d-MMMM-YYYY",
-    );
-    if (parsedDate == "1-January-2000") {
+    var tournamentDate = Utils.getTournamentDate();
+    while (!tournamentDate && prompt_user) {
       tournamentDate = Utils.showPrompt(
         "You have not entered a tournament date. Please enter one now",
       );
-      currentSheet.getRangeByName("TournamentDate")?.setValue(tournamentDate);
-      var tournamentDate = currentSheet
-        .getRangeByName("TournamentDate")
-        ?.getValue();
-      var parsedDate = Utilities.formatDate(
-        tournamentDate,
-        "America/Los_Angeles",
-        "d-MMMM-YYYY",
-      );
+      currentSheet
+        .getRangeByName(Constants.TOURNAMENT_DATE_RANGE_NAME)
+        ?.setValue(tournamentDate);
+      tournamentDate = Utils.getTournamentDate();
     }
 
-    var tournamentDivision = currentSheet.getRangeByName("Division")?.getValue();
-    if (tournamentDivision == "" || tournamentDivision == "__") {
+    var tournamentDivision = Utils.getTournamentDivision();
+    if (!tournamentDivision && prompt_user) {
       tournamentDivision = Utils.showPrompt(
         "You have not entered a tournament division. Please enter one now",
       );
-      currentSheet.getRangeByName("Division")?.setValue(tournamentDivision);
+      currentSheet
+        .getRangeByName(Constants.DIVISION_RANGE_NAME)
+        ?.setValue(tournamentDivision);
     }
 
-    var tournamentLocation = currentSheet.getRangeByName("Location")?.getValue();
-    if (tournamentLocation == "" || tournamentLocation == "School_Name") {
+    var tournamentLocation = Utils.getTournamentLocation();
+    if (!tournamentLocation && prompt_user) {
       tournamentLocation = Utils.showPrompt(
         "You have not entered a tournament location. Please enter one now",
       );
-      currentSheet.getRangeByName("Location")?.setValue(tournamentLocation);
+      currentSheet
+        .getRangeByName(Constants.LOCATION_RANGE_NAME)
+        ?.setValue(tournamentLocation);
+    }
+
+    if (
+      !tournamentName ||
+      !tournamentDate ||
+      !tournamentDivision ||
+      !tournamentLocation
+    ) {
+      return "";
     }
 
     var fullTournamentDate =
-      parsedDate +
+      tournamentDate +
       " " +
       tournamentName +
       " Division-" +
@@ -197,5 +201,117 @@ export class Utils {
         .getRange(range)
         .setValues(templateSheet.getRange(range).getValues());
     }
+  }
+
+  static getTournamentName(): string | null {
+    const currentSheet = SpreadsheetApp.getActiveSpreadsheet();
+    const tournamentName = currentSheet
+      .getRangeByName(Constants.TOURNAMENT_NAME_RANGE_NAME)
+      ?.getValue();
+    if (
+      tournamentName == "" ||
+      tournamentName == Constants.DEFAULT_TOURNAMENT_NAME
+    ) {
+      return null;
+    }
+    return tournamentName;
+  }
+
+  static getTournamentDivision(): string | null {
+    const currentSheet = SpreadsheetApp.getActiveSpreadsheet();
+    const tournamentDivision = currentSheet
+      .getRangeByName(Constants.DIVISION_RANGE_NAME)
+      ?.getValue();
+    if (
+      tournamentDivision == "" ||
+      tournamentDivision == Constants.DEFAULT_TOURNAMENT_DIVISION
+    ) {
+      return null;
+    }
+    return tournamentDivision;
+  }
+
+  static getTournamentLocation(): string | null {
+    const currentSheet = SpreadsheetApp.getActiveSpreadsheet();
+    const tournamentLocation = currentSheet
+      .getRangeByName(Constants.LOCATION_RANGE_NAME)
+      ?.getValue();
+    if (
+      tournamentLocation == "" ||
+      tournamentLocation == Constants.DEFAULT_TOURNAMENT_LOCATION
+    ) {
+      return null;
+    }
+    return tournamentLocation;
+  }
+
+  static getTournamentDate(): string | null {
+    var currentSheet = SpreadsheetApp.getActiveSpreadsheet();
+    var tournamentDate = currentSheet
+      .getRangeByName(Constants.TOURNAMENT_DATE_RANGE_NAME)
+      ?.getValue();
+    var parsedDate = Utilities.formatDate(
+      tournamentDate,
+      "America/Los_Angeles",
+      "d-MMMM-YYYY",
+    );
+    if (parsedDate == Constants.DEFAULT_TOURNAMENT_DATE) {
+      return null;
+    }
+    return parsedDate;
+  }
+
+  static getNumberOfTeams(): string | null {
+    const currentSheet = SpreadsheetApp.getActiveSpreadsheet();
+    const tournamentLocation = currentSheet
+      .getRangeByName(Constants.NUMBER_OF_TEAMS_RANGE_NAME)
+      ?.getValue();
+    if (
+      tournamentLocation == "" ||
+      tournamentLocation == Constants.DEFAULT_NUMBER_OF_TEAMS
+    ) {
+      return null;
+    }
+    return tournamentLocation;
+  }
+
+  static getTemplateFolder(
+    prompt_user: boolean = true,
+  ): GoogleAppsScript.Drive.Folder | null {
+    const rootFolder = FolderUtils.getParentFolderId();
+    const tournamentName = Utils.getTournamentNameParsed(prompt_user);
+    if (
+      tournamentName == "" &&
+      !FolderUtils.findFolderBySubstrings(rootFolder, "Template File")
+    ) {
+      return null;
+    }
+    const templateFolder = FolderUtils.findOrCreateFolderUnderRootFolder(
+      rootFolder,
+      "Template Files - " + tournamentName,
+      "Template File",
+    );
+    return templateFolder;
+  }
+
+  static getScoreSheetFolder(
+    prompt_user: boolean = true,
+  ): GoogleAppsScript.Drive.Folder | null {
+    const rootFolder = FolderUtils.getParentFolderId();
+    const tournamentName = Utils.getTournamentNameParsed(prompt_user);
+    if (
+      tournamentName == "" &&
+      !FolderUtils.findFolderBySubstrings(
+        rootFolder,
+        "Event Specific Score Sheets - " + tournamentName,
+      )
+    ) {
+      return null;
+    }
+    const scoreSheetFolder = FolderUtils.findOrCreateFolderUnderRootFolder(
+      rootFolder,
+      "Event Specific Score Sheets - " + tournamentName,
+    );
+    return scoreSheetFolder;
   }
 }

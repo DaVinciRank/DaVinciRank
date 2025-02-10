@@ -13,23 +13,80 @@ export class FolderUtils {
   }
 
   /**
-   * Creates a folder under the specified root folder.
-   * @param {GoogleAppsScript.Drive.Folder} rootFolder - The root folder
-   * @param {string} folderName - The name of the folder to create.
-   * @returns {GoogleAppsScript.Drive.Folder} - The created folder
+   * Finds a folder that matches the given substrings under the root folder.
+   * @param {GoogleAppsScript.Drive.Folder} rootFolder - The root folder to search in.
+   * @param {string} folderSubString - The primary substring to match.
+   * @param {string} [secondarySubString] - Optional secondary substring to match.
+   * @returns {GoogleAppsScript.Drive.Folder | null} - The matching folder or null if not found.
    */
-  static createFolderUnderRootFolder(
+  static findFolderBySubstrings(
+    rootFolder: GoogleAppsScript.Drive.Folder,
+    folderSubString: string,
+    secondarySubString?: string,
+  ): GoogleAppsScript.Drive.Folder | null {
+    const subfolders = rootFolder.getFolders();
+    const matchingFolders: GoogleAppsScript.Drive.Folder[] = [];
+
+    // Collect all folders matching the first substring
+    while (subfolders.hasNext()) {
+      const folder = subfolders.next();
+      if (folder.getName().includes(folderSubString)) {
+        matchingFolders.push(folder);
+      }
+    }
+
+    // If secondary substring provided, filter matching folders further
+    if (matchingFolders.length > 0 && secondarySubString) {
+      const secondaryMatches = matchingFolders.filter((folder) =>
+        folder.getName().includes(secondarySubString),
+      );
+
+      if (secondaryMatches.length > 0) {
+        return secondaryMatches[0];
+      }
+    }
+
+    // Return first match if any, otherwise null
+    return matchingFolders.length > 0 ? matchingFolders[0] : null;
+  }
+
+  /**
+   * Creates a new folder under the root folder with the given name.
+   * @param {GoogleAppsScript.Drive.Folder} rootFolder - The root folder.
+   * @param {string} folderName - The name of the new folder.
+   * @returns {GoogleAppsScript.Drive.Folder} - The newly created folder.
+   */
+  static createFolderUnderRoot(
     rootFolder: GoogleAppsScript.Drive.Folder,
     folderName: string,
   ): GoogleAppsScript.Drive.Folder {
-    const folderIterator = rootFolder.getFoldersByName(folderName);
-    if (folderIterator.hasNext()) {
-      // When the folder exists
-      return folderIterator.next();
-    } else {
-      // When the folder doesn't exist
-      return rootFolder.createFolder(folderName);
-    }
+    return rootFolder.createFolder(folderName);
+  }
+
+  /**
+   * Finds or creates a folder under the root folder.
+   * @param {GoogleAppsScript.Drive.Folder} rootFolder - The root folder.
+   * @param {string} folderName - The name of the folder to create if substring does not exist.
+   * @param {string} folderSubString - The substring of the folder name.
+   * @param {string} secondarySubString - The if first substring has multiple matches, use this as secondary match
+   * @returns {GoogleAppsScript.Drive.Folder} - The folder.
+   */
+  static findOrCreateFolderUnderRootFolder(
+    rootFolder: GoogleAppsScript.Drive.Folder,
+    folderName: string,
+    folderSubString?: string,
+    secondarySubString?: string,
+  ): GoogleAppsScript.Drive.Folder {
+    const existingFolder = FolderUtils.findFolderBySubstrings(
+      rootFolder,
+      folderSubString ? folderSubString : folderName,
+      secondarySubString,
+    );
+
+    return (
+      existingFolder ||
+      FolderUtils.createFolderUnderRoot(rootFolder, folderName)
+    );
   }
 
   /**
@@ -91,7 +148,10 @@ export class FolderUtils {
    * @param {GoogleAppsScript.Drive.Folder} folder - The folder.
    * @param {string[]} emails - The email addresses of the editors.
    */
-  static addEditorToFolder(folder: GoogleAppsScript.Drive.Folder, emails: string[]) {
+  static addEditorToFolder(
+    folder: GoogleAppsScript.Drive.Folder,
+    emails: string[],
+  ) {
     var existingEditors = folder.getEditors().map(function (editor) {
       return editor.getEmail();
     });
@@ -103,7 +163,9 @@ export class FolderUtils {
           folder.addEditor(email); // Attempt to add the editor
         } catch (e: unknown) {
           if (e instanceof Error) {
-            Logger.log("Error adding editor: " + email + ". Error: " + e.message);
+            Logger.log(
+              "Error adding editor: " + email + ". Error: " + e.message,
+            );
           } else {
             Logger.log(
               "Error adding editor: " + email + ". Unknown error occurred.",
@@ -118,6 +180,7 @@ export class FolderUtils {
    * Shares all scoring folders with specified emails.
    */
   static shareScoringFoldersWithEmails() {
+    const tournamentName = Utils.getTournamentNameParsed();
     var currentSheet = SpreadsheetApp.getActiveSpreadsheet();
     var range = currentSheet.getRangeByName("EventsAndEmailSharing");
     if (!range) {
@@ -134,22 +197,23 @@ export class FolderUtils {
     });
 
     var parentFolder = FolderUtils.getParentFolderId();
-    var scoreSheetFolder = FolderUtils.createFolderUnderRootFolder(
+    var scoreSheetFolder = FolderUtils.findOrCreateFolderUnderRootFolder(
       parentFolder,
-      Utils.getTournamentNameParsed() + " - Event Specific Score Sheets",
+      "Event Specific Score Sheets - " + tournamentName,
     );
 
     for (const j in rangeValues) {
       var eventName = rangeValues[j][0];
       CacheLogger.appendLog("Adding ES emails for " + eventName);
-      var spreadSheetName =
-        eventName + " Event Scoring - " + Utils.getTournamentNameParsed();
-      var spreadSheetFolder = FolderUtils.createFolderUnderRootFolder(
+      var spreadSheetName = eventName + " Event Scoring - " + tournamentName;
+      var spreadSheetFolder = FolderUtils.findOrCreateFolderUnderRootFolder(
         scoreSheetFolder,
         spreadSheetName,
       );
-      FolderUtils.addEditorToFolder(spreadSheetFolder, rangeValues[j].slice(1, 4));
+      FolderUtils.addEditorToFolder(
+        spreadSheetFolder,
+        rangeValues[j].slice(1, 4),
+      );
     }
   }
-
 }

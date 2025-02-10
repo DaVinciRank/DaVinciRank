@@ -3,7 +3,6 @@ import { FolderUtils } from "./folderUtils";
 import { CacheLogger } from "./cacheLogger";
 
 export class Slides {
-
   /**
    * Finds the slide show presentation ID.
    * @returns {string} - The slide show presentation ID.
@@ -29,7 +28,10 @@ export class Slides {
     eventName: string,
     maxVal: number,
   ): string[] {
-    const rowNum = SpreadsheetUtils.findCellRowWithTextInSheet(sheet, eventName);
+    const rowNum = SpreadsheetUtils.findCellRowWithTextInSheet(
+      sheet,
+      eventName,
+    );
     if (!rowNum || typeof rowNum !== "number") {
       Logger.log("Event name not found in the spreadsheet.");
       return [];
@@ -162,5 +164,4 @@ export class Slides {
 
     teamSlides.move(2);
   }
-
 }
