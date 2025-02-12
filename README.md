@@ -1,4 +1,4 @@
-# Science Olympiad Tournament Scoring System
+# DaVinciRank Science Olympiad Tournament Scoring System
 
 ## New tournamament Setup
 
@@ -11,7 +11,7 @@
 - If you get prompt `Authorization Requried`, follow these [instructions](#authorization-required-to-run-script)
 
 4. For build event template files, you can pull from https://www.soinc.org/scoresheets yourself or go to this google drive link and use `Control-C` and `Control-V` to copy all files to your folder at once.
-  - Note: Wait for step `3. Create Grading Scoresheets` to do this as it required a specific folder you need to copy those into. Also make sure that the exact event name appears (ie `Robot Tour` not `RobotTour`) in the name of the files, otherwise it will not be copied over to event folders. You may also choose to upload event rules or any other pertinent files here as long it has the event name in the file name.
+  - Note: Wait for step `4. Create Grading Scoresheets` to do this as it required a specific folder you need to copy those into. Also make sure that the exact event name appears (ie `Robot Tour` not `RobotTour`) in the name of the files, otherwise it will not be copied over to event folders. You may also choose to upload event rules or any other pertinent files here as long it has the event name in the file name.
   - B-Division: https://drive.google.com/drive/folders/1TvcigTrrJmieDnZyEeXOBPzURXXQNhvF
   - C-Division: https://drive.google.com/drive/folders/1uMEusLDGLVHCZrM9XIax6LKqbxAZ9NqU
 
