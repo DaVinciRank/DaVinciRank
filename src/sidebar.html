@@ -366,6 +366,43 @@
         animation: slideOut 0.3s ease-out;
       }
 
+      .finalize-action {
+        margin-left: auto;
+      }
+
+      .finalize-btn {
+        width: auto !important;
+        padding: 4px 8px;
+        font-size: 12px;
+        margin: 0;
+        background-color: #2ecc71;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .status-icon.success {
+        font-size: 18px;
+        color: #2ecc71;
+      }
+
+      .tournament-tab {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 150px);
+        overflow: hidden;
+      }
+
+      .check-off-events-container {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 0;
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
       @keyframes slideIn {
         from {
           opacity: 0;
@@ -445,6 +482,13 @@
       <button onclick="runTournamentFunction('createOneSlidePerRow')">
         6. Create Slides Presentation
       </button>
+
+      <div style="margin: 15px 0"></div>
+
+      <h3>Check off Events</h3>
+      <div id="checkOffEventsList" class="check-off-events-container">
+        <!-- The events list is rendered here -->
+      </div>
     </div>
 
     <div class="content" id="logs">
@@ -502,6 +546,10 @@
         document
           .querySelector(`button[onclick="switchTab('${tabId}')"]`)
           .classList.add("active");
+
+        if (tabId === "tournament") {
+          loadCheckOffEvents();
+        }
       }
 
       function updateLogBox(logs) {
@@ -683,6 +731,42 @@
           .join("");
 
         container.innerHTML = eventsHTML;
+      }
+
+      function loadCheckOffEvents() {
+        google.script.run
+          .withSuccessHandler(updateCheckOffEventsList)
+          .getEventsForCheckOff();
+      }
+
+      function updateCheckOffEventsList(events) {
+        const container = document.getElementById("checkOffEventsList");
+        if (!container) return;
+
+        const eventsHTML = events
+          .map((event) => {
+            return `
+              <div class="event-item">
+                <span class="event-name">${event.name}</span>
+                ${
+                  event.finalized
+                    ? `<span class="status-icon success">✓</span>`
+                    : `<button class="finalize-btn" onclick="confirmFinalize('${event.name}')">Finalize</button>`
+                }
+              </div>
+            `;
+          })
+          .join("");
+
+        container.innerHTML = eventsHTML;
+      }
+
+      function confirmFinalize(eventId) {
+        if (confirm("Are you sure you want to finalize this event?")) {
+          google.script.run
+            .withSuccessHandler(loadCheckOffEvents)
+            .finalizeEvent(eventId);
+        }
       }
     </script>
   </body>

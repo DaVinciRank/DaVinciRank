@@ -393,6 +393,75 @@ function getEventScoringFiles() {
   }
 }
 
+/**
+ * Retrieves a list of events along with whether each is finalized.
+ */
+function getEventsForCheckOff() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const eventsRange = ss.getRangeByName("Events");
+  if (!eventsRange) return [];
+
+  // Get a flat array of event names from the named range.
+  const events = eventsRange.getValues().flat().filter(String);
+
+  // Assume the finalized checkmarks are in the "Final Rankings" sheet.
+  const finalRankSheet = ss.getSheetByName("Final Rankings");
+  if (!finalRankSheet) {
+    throw new Error("Final Rankings sheet not found.");
+  }
+
+  const result = events.map((eventName) => {
+    // Use SpreadsheetUtils to find the row where this event is listed.
+    const rowNum = SpreadsheetUtils.findCellRowWithTextInSheet(
+      finalRankSheet,
+      eventName,
+    );
+    let finalized = false;
+    if (rowNum) {
+      // Use the same logic as in your Slides class to check column "G"
+      // (i.e. get the cell value at that row with an offset of 0).
+      const cellValue = Slides.getCellValueByColumnRowAndOffset(
+        finalRankSheet,
+        "G",
+        rowNum,
+        0,
+      );
+      finalized = cellValue === true;
+    }
+    return {
+      name: eventName,
+      finalized: finalized,
+    };
+  });
+
+  return result;
+}
+
+/**
+ * Marks a given event as finalized.
+ * @param {string} eventId - The event identifier (in this case, the event name).
+ */
+function finalizeEvent(eventId: string) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const finalRankSheet = ss.getSheetByName("Final Rankings");
+  if (!finalRankSheet) {
+    throw new Error("Final Rankings sheet not found.");
+  }
+
+  // Find the row for the event using the event name.
+  const rowNum = SpreadsheetUtils.findCellRowWithTextInSheet(
+    finalRankSheet,
+    eventId,
+  );
+  if (!rowNum) {
+    throw new Error(
+      `Event "${eventId}" not found in the Final Rankings sheet.`,
+    );
+  }
+
+  finalRankSheet.getRange("G" + rowNum).setValue(true);
+}
+
 // Define imports here so when built, they all combine into 1 js file for clasp push
 const util = new Utils();
 const scoringUtils = new ScoringUtils();
