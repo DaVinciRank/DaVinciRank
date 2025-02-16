@@ -21,13 +21,13 @@ export class Slides {
    * @param {GoogleAppsScript.Spreadsheet.Sheet} spreadsheet - The spreadsheet.
    * @param {string} eventName - The event name.
    * @param {number} maxVal - The maximum value.
-   * @returns {string[]} - The data corresponding to the event name.
+   * @returns {string[] | bolean} - The data corresponding to the event name. Returns false is event is not done scoring.
    */
   static getDataCorrespondingToEventName(
     sheet: GoogleAppsScript.Spreadsheet.Sheet,
     eventName: string,
     maxVal: number,
-  ): string[] {
+  ): string[] | boolean {
     const rowNum = SpreadsheetUtils.findCellRowWithTextInSheet(
       sheet,
       eventName,
@@ -36,6 +36,19 @@ export class Slides {
       Logger.log("Event name not found in the spreadsheet.");
       return [];
     }
+
+    const isEventCompleted = Slides.getCellValueByColumnRowAndOffset(
+      sheet,
+      "G",
+      rowNum,
+      0,
+    );
+
+    // If the event is not marked as complete, then skip slides
+    if (!isEventCompleted) {
+      return false;
+    }
+
     /*
     1st: A{row+2} & B{row+2} & C{row+2}
     2nd: A{row+3} & B{row+3} & C{row+3}
@@ -46,7 +59,7 @@ export class Slides {
     for (var i = 2; i <= maxVal; i++) {
       entryList.push(
         Slides.getCellValueByColumnRowAndOffset(sheet, "A", rowNum, i) +
-          "\t\t" +
+          "  \t" +
           Slides.getCellValueByColumnRowAndOffset(sheet, "B", rowNum, i) +
           "\t" +
           Slides.getCellValueByColumnRowAndOffset(sheet, "C", rowNum, i),
@@ -121,17 +134,22 @@ export class Slides {
     eventSlides.setSkipped(true);
     teamSlides.setSkipped(true);
 
+    // Clear all existing generated slides as they will get recreated
     Slides.removeSlidesAfterIndex(3, deck);
 
     for (var i = eventNames.length - 1; i >= 0; i--) {
       const eventName = eventNames[i];
-      CacheLogger.appendLog("Adding slides for " + eventName);
-
       const eventData = Slides.getDataCorrespondingToEventName(
         currentSheet,
         eventName,
         5,
       );
+
+      if (!eventData || !Array.isArray(eventData)) {
+        CacheLogger.appendLog("Skipping slides for " + eventName);
+        continue;
+      }
+      CacheLogger.appendLog("Adding slides for " + eventName);
 
       const slide = eventSlides.duplicate();
       slide.setSkipped(false);
@@ -145,13 +163,19 @@ export class Slides {
     }
 
     // Create the final ranking slide
-    const slide = teamSlides.duplicate();
-    slide.setSkipped(false);
     const eventData = Slides.getDataCorrespondingToEventName(
       currentSheet,
       "Overall Team Results",
       9,
     );
+
+    if (!eventData || !Array.isArray(eventData)) {
+      CacheLogger.appendLog("Skipping slides for overall results");
+      return;
+    }
+
+    const slide = teamSlides.duplicate();
+    slide.setSkipped(false);
 
     slide.replaceAllText("1. __", eventData[0]);
     slide.replaceAllText("2. __", eventData[1]);
