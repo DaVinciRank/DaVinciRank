@@ -81,7 +81,7 @@ export class Slides {
     column: string,
     row: number,
     offset: number,
-  ): string {
+  ): string | boolean {
     // double check this logic
     return spreadsheet
       .getRange(column + (row + offset) + ":" + column + (row + offset))

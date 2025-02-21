@@ -380,7 +380,7 @@ function getEventScoringFiles() {
         }
       } catch (e) {
         console.error(`Error finding file for ${eventName}: ${e}`);
-      }
+      }      
 
       return {
         name: eventName,
@@ -417,7 +417,7 @@ function getEventsForCheckOff() {
       eventName,
     );
     let finalized = false;
-    if (rowNum) {
+    if (rowNum && typeof rowNum === "number") {
       // Use the same logic as in your Slides class to check column "G"
       // (i.e. get the cell value at that row with an offset of 0).
       const cellValue = Slides.getCellValueByColumnRowAndOffset(

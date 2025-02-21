@@ -762,11 +762,9 @@
       }
 
       function confirmFinalize(eventId) {
-        if (confirm("Are you sure you want to finalize this event?")) {
-          google.script.run
-            .withSuccessHandler(loadCheckOffEvents)
-            .finalizeEvent(eventId);
-        }
+        google.script.run
+          .withSuccessHandler(loadCheckOffEvents)
+          .finalizeEvent(eventId);
       }
     </script>
   </body>
