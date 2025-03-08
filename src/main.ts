@@ -380,7 +380,7 @@ function getEventScoringFiles() {
         }
       } catch (e) {
         console.error(`Error finding file for ${eventName}: ${e}`);
-      }      
+      }
 
       return {
         name: eventName,

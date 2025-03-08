@@ -102,18 +102,18 @@ export class Slides {
   }
 
   /**
-   * Creates one slide per row in the "Final Rankings" sheet.
+   * Creates one slide per row in the "Final Rankings" sheet, ensuring smart appending.
    */
   static createOneSlidePerRow() {
     // Google Slides presentation.
     const masterDeckID = Slides.findSlideShowPresentation();
-    // Open the presentation and get the slides in it.
     const deck = SlidesApp.openById(masterDeckID);
     const slides: GoogleAppsScript.Slides.Slide[] = deck.getSlides();
 
     var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     var currentSheet: GoogleAppsScript.Spreadsheet.Sheet | null =
       spreadsheet.getSheetByName("Final Rankings");
+
     if (!currentSheet || typeof currentSheet === "undefined") {
       throw new Error("Final Ranking Sheet not found in the spreadsheet.");
     }
@@ -122,23 +122,51 @@ export class Slides {
     if (!range) {
       throw new Error("Range 'Events' not found in the spreadsheet.");
     }
+
     var values = range.getValues();
     var eventNames = values.flat().filter(function (cell) {
       return cell !== "";
     });
-
     // The 2nd slide is the template that will be duplicated
-    // once per row in the spreadsheet.
-    const eventSlides: GoogleAppsScript.Slides.Slide = slides[1];
-    const teamSlides: GoogleAppsScript.Slides.Slide = slides[2];
-    eventSlides.setSkipped(true);
-    teamSlides.setSkipped(true);
+    const eventSlideTemplate: GoogleAppsScript.Slides.Slide = slides.find(
+      (slide) =>
+        slide
+          .getNotesPage()
+          .getSpeakerNotesShape()
+          .getText()
+          .asString()
+          .includes("Event Slide Template"),
+    );
 
-    // Clear all existing generated slides as they will get recreated
-    Slides.removeSlidesAfterIndex(3, deck);
+    const finalRankingSlideTemplate: GoogleAppsScript.Slides.Slide =
+      slides.find((slide) =>
+        slide
+          .getNotesPage()
+          .getSpeakerNotesShape()
+          .getText()
+          .asString()
+          .includes("Final Ranking Slide Template"),
+      );
 
-    for (var i = eventNames.length - 1; i >= 0; i--) {
-      const eventName = eventNames[i];
+    if (!eventSlideTemplate || !finalRankingSlideTemplate) {
+      throw new Error(
+        "Event Slide Template or Final Ranking Slide Template not found.",
+      );
+    }
+
+    const currentEventSlides = slides.filter((slide) =>
+      slide
+        .getNotesPage()
+        .getSpeakerNotesShape()
+        .getText()
+        .asString()
+        .includes("Event Slide:"),
+    );
+
+    const eventSlidePosition = slides.indexOf(eventSlideTemplate) + 1;
+
+    // Iterate over the event names and add new slides, ensuring no duplicate event slides
+    eventNames.reverse().forEach((eventName) => {
       const eventData = Slides.getDataCorrespondingToEventName(
         currentSheet,
         eventName,
@@ -146,46 +174,82 @@ export class Slides {
       );
 
       if (!eventData || !Array.isArray(eventData)) {
-        CacheLogger.appendLog("Skipping slides for " + eventName);
-        continue;
+        return;
       }
+
+      // Check if a slide with the same tag already exists
+      const existingEventSlide = currentEventSlides.find((slide) =>
+        slide
+          .getNotesPage()
+          .getSpeakerNotesShape()
+          .getText()
+          .asString()
+          .includes(`Event Slide: ${eventName}`),
+      );
+
+      if (existingEventSlide) {
+        // Skip creating the slide if it already exists
+        CacheLogger.appendLog(
+          `Event slide for "${eventName}" already exists, skipping.`,
+        );
+        return;
+      }
+
       CacheLogger.appendLog("Adding slides for " + eventName);
 
-      const slide = eventSlides.duplicate();
-      slide.setSkipped(false);
+      // Create a new event slide by duplicating the template
+      const newEventSlide = eventSlideTemplate.duplicate();
+      newEventSlide.setSkipped(false);
 
-      // Populate data in the slide that was created
-      slide.replaceAllText("EVENT_NAME", eventName);
-      slide.replaceAllText("1. __", eventData[0]);
-      slide.replaceAllText("2. __", eventData[1]);
-      slide.replaceAllText("3. __", eventData[2]);
-      slide.replaceAllText("4. __", eventData[3]);
-    }
+      // Populate data in the slide
+      newEventSlide.replaceAllText("EVENT_NAME", eventName);
+      newEventSlide.replaceAllText("1. __", eventData[0]);
+      newEventSlide.replaceAllText("2. __", eventData[1]);
+      newEventSlide.replaceAllText("3. __", eventData[2]);
+      newEventSlide.replaceAllText("4. __", eventData[3]);
+
+      // Set the tag for this new slide
+      newEventSlide
+        .getNotesPage()
+        .getSpeakerNotesShape()
+        .getText()
+        .setText("Event Slide: " + eventName);
+
+      // Move the new event slide to the correct position (after the last event slide and before the final ranking slide)
+      const newSlideIndex = eventSlidePosition + currentEventSlides.length + 1;
+      newEventSlide.move(newSlideIndex);
+    });
 
     // Create the final ranking slide
-    const eventData = Slides.getDataCorrespondingToEventName(
+    const finalRankingData = Slides.getDataCorrespondingToEventName(
       currentSheet,
       "Overall Team Results",
       9,
     );
 
-    if (!eventData || !Array.isArray(eventData)) {
+    if (!finalRankingData || !Array.isArray(finalRankingData)) {
       CacheLogger.appendLog("Skipping slides for overall results");
       return;
     }
 
-    const slide = teamSlides.duplicate();
-    slide.setSkipped(false);
+    // Add the final ranking slide
+    const newFinalRankingSlide = finalRankingSlideTemplate.duplicate();
+    newFinalRankingSlide.setSkipped(false);
 
-    slide.replaceAllText("1. __", eventData[0]);
-    slide.replaceAllText("2. __", eventData[1]);
-    slide.replaceAllText("3. __", eventData[2]);
-    slide.replaceAllText("4. __", eventData[3]);
-    slide.replaceAllText("5. __", eventData[4]);
-    slide.replaceAllText("6. __", eventData[5]);
-    slide.replaceAllText("7. __", eventData[6]);
-    slide.replaceAllText("8. __", eventData[7]);
+    newFinalRankingSlide.replaceAllText("1. __", finalRankingData[0]);
+    newFinalRankingSlide.replaceAllText("2. __", finalRankingData[1]);
+    newFinalRankingSlide.replaceAllText("3. __", finalRankingData[2]);
+    newFinalRankingSlide.replaceAllText("4. __", finalRankingData[3]);
+    newFinalRankingSlide.replaceAllText("5. __", finalRankingData[4]);
+    newFinalRankingSlide.replaceAllText("6. __", finalRankingData[5]);
+    newFinalRankingSlide.replaceAllText("7. __", finalRankingData[6]);
+    newFinalRankingSlide.replaceAllText("8. __", finalRankingData[7]);
 
-    teamSlides.move(2);
+    // Set the tag for the final ranking slide
+    newFinalRankingSlide
+      .getNotesPage()
+      .getSpeakerNotesShape()
+      .getText()
+      .setText("Final Ranking Slide");
   }
 }
