@@ -2,6 +2,7 @@ import { Utils } from "./utils";
 import { FolderUtils } from "./folderUtils";
 import { SpreadsheetUtils } from "./spreadsheetUtils";
 import { CacheLogger } from "./cacheLogger";
+import { TournamentUtils } from "./tournamentUtils";
 
 export class ScoringUtils {
   /**
@@ -9,7 +10,7 @@ export class ScoringUtils {
    */
   static createNewScoringSpreadsheets() {
     const startTime = new Date();
-    const tournamentName = Utils.getTournamentNameParsed();
+    const tournamentName = TournamentUtils.getTournamentNameParsed();
 
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const templateSheet = spreadsheet.getSheetByName("Blank Score Sheet");

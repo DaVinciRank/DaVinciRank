@@ -5,6 +5,8 @@ import { Utils } from "./utils";
 import { Slides } from "./slides";
 import { CacheLogger } from "./cacheLogger";
 import { Constants } from "./constants";
+import { TournamentUtils } from "./tournamentUtils";
+import { UiUtils } from "./uiUtils";
 
 /**
  * Runs when the Google Sheets document is opened.
@@ -205,14 +207,14 @@ function tournamentSetup() {
 function getTournamentInfo() {
   try {
     // Get values from named ranges
-    const tournamentName = Utils.getTournamentName();
-    const tournamentDate = Utils.getTournamentDate();
-    const tournamentLocation = Utils.getTournamentLocation();
-    const division = Utils.getTournamentDivision();
-    const numTeams = Utils.getNumberOfTeams();
+    const tournamentName = TournamentUtils.getTournamentName();
+    const tournamentDate = TournamentUtils.getTournamentDate();
+    const tournamentLocation = TournamentUtils.getTournamentLocation();
+    const division = TournamentUtils.getTournamentDivision();
+    const numTeams = TournamentUtils.getNumberOfTeams();
 
-    const scoresheetFolder = Utils.getScoreSheetFolder(false);
-    const templateFolder = Utils.getTemplateFolder(false);
+    const scoresheetFolder = FolderUtils.getScoreSheetFolder(false);
+    const templateFolder = FolderUtils.getTemplateFolder(false);
 
     // Return object with specific order (order matters for display)
     return [
@@ -314,10 +316,10 @@ function promptForMissingInfo(field: string) {
       range = spreadsheet.getRangeByName(Constants.NUMBER_OF_TEAMS_RANGE_NAME);
       break;
     case "Scoresheet Folder":
-      Utils.getScoreSheetFolder(true);
+      FolderUtils.getScoreSheetFolder(true);
       return;
     case "Template Folder":
-      Utils.getTemplateFolder(true);
+      FolderUtils.getTemplateFolder(true);
       return;
   }
 
@@ -325,7 +327,7 @@ function promptForMissingInfo(field: string) {
     return;
   }
 
-  const result = Utils.showPrompt(prompt);
+  const result = UiUtils.showPrompt(prompt);
 
   if (result) {
     if (field === "Tournament Date") {
@@ -354,8 +356,8 @@ function getEventScoringFiles() {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const events =
       ss.getRangeByName("Events")?.getValues().flat().filter(String) || [];
-    const tournamentName = Utils.getTournamentNameParsed(false);
-    const scoresheetFolder = Utils.getScoreSheetFolder(false);
+    const tournamentName = TournamentUtils.getTournamentNameParsed(false);
+    const scoresheetFolder = FolderUtils.getScoreSheetFolder(false);
 
     if (!scoresheetFolder) {
       console.error("Scoresheet folder not created yet:");
@@ -469,3 +471,5 @@ const folderUtils = new FolderUtils();
 const spreadsheetUtils = new SpreadsheetUtils();
 const slides = new Slides();
 const cacheLogger = new CacheLogger();
+const tournamentUtils = new TournamentUtils();
+const uiUtils = new UiUtils();

@@ -1,48 +1,5 @@
 import { Utils } from "../src/utils";
 
-test("showPrompt should return user response", () => {
-  // Mock the SpreadsheetApp and Logger
-  global.SpreadsheetApp = {
-    getUi: jest.fn().mockReturnValue({
-      prompt: jest.fn().mockReturnValue({
-        getSelectedButton: jest.fn().mockReturnValue("OK"),
-        getResponseText: jest.fn().mockReturnValue("Test Response"),
-      }),
-      ButtonSet: {
-        OK_CANCEL: "OK_CANCEL",
-      },
-      Button: {
-        OK: "OK",
-      },
-    }),
-  } as unknown as typeof SpreadsheetApp;
-  global.Logger = {
-    log: jest.fn(),
-  } as unknown as typeof Logger;
-
-  const response = Utils.showPrompt("Test Prompt");
-  expect(response).toBe("Test Response");
-});
-
-test("getTournamentNameParsed should return tournament name", () => {
-  // Mock the SpreadsheetApp and Utilities
-  global.SpreadsheetApp = {
-    getActiveSpreadsheet: jest.fn().mockReturnValue({
-      getRangeByName: jest.fn().mockReturnValue({
-        getValue: jest.fn().mockReturnValue("Test Tournament"),
-      }),
-    }),
-  } as unknown as typeof SpreadsheetApp;
-  global.Utilities = {
-    formatDate: jest.fn().mockReturnValue("1-January-2023"),
-  } as unknown as typeof Utilities;
-
-  const tournamentName = Utils.getTournamentNameParsed();
-  expect(tournamentName).toBe(
-    "1-January-2023 Test Tournament Division-Test Tournament @ Test Tournament",
-  );
-});
-
 test("getColumnLetters should return correct column letter", () => {
   expect(Utils.getColumnLetters(1)).toBe("A");
   expect(Utils.getColumnLetters(26)).toBe("Z");

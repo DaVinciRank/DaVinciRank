@@ -1,4 +1,4 @@
-import { Utils } from "./utils";
+import { TournamentUtils } from "./tournamentUtils";
 import { CacheLogger } from "./cacheLogger";
 
 export class FolderUtils {
@@ -180,7 +180,7 @@ export class FolderUtils {
    * Shares all scoring folders with specified emails.
    */
   static shareScoringFoldersWithEmails() {
-    const tournamentName = Utils.getTournamentNameParsed();
+    const tournamentName = TournamentUtils.getTournamentNameParsed();
     var currentSheet = SpreadsheetApp.getActiveSpreadsheet();
     var range = currentSheet.getRangeByName("EventsAndEmailSharing");
     if (!range) {
@@ -215,5 +215,53 @@ export class FolderUtils {
         rangeValues[j].slice(1, 4),
       );
     }
+  }
+
+  /**
+   * Gets the scoresheet folder from the spreadsheet.
+   * @returns {Folder} - The scoresheet folder.
+   */
+  static getScoreSheetFolder(
+    prompt_user: boolean = true,
+  ): GoogleAppsScript.Drive.Folder | null {
+    const rootFolder = FolderUtils.getParentFolderId();
+    const tournamentName = TournamentUtils.getTournamentNameParsed(prompt_user);
+    if (
+      tournamentName == "" &&
+      !FolderUtils.findFolderBySubstrings(
+        rootFolder,
+        "Event Specific Score Sheets - " + tournamentName,
+      )
+    ) {
+      return null;
+    }
+    const scoreSheetFolder = FolderUtils.findOrCreateFolderUnderRootFolder(
+      rootFolder,
+      "Event Specific Score Sheets - " + tournamentName,
+    );
+    return scoreSheetFolder;
+  }
+
+  /**
+   * Gets the scoresheet folder from the spreadsheet.
+   * @returns {Folder} - The scoresheet folder.
+   */
+  static getTemplateFolder(
+    prompt_user: boolean = true,
+  ): GoogleAppsScript.Drive.Folder | null {
+    const rootFolder = FolderUtils.getParentFolderId();
+    const tournamentName = TournamentUtils.getTournamentNameParsed(prompt_user);
+    if (
+      tournamentName == "" &&
+      !FolderUtils.findFolderBySubstrings(rootFolder, "Template File")
+    ) {
+      return null;
+    }
+    const templateFolder = FolderUtils.findOrCreateFolderUnderRootFolder(
+      rootFolder,
+      "Template Files - " + tournamentName,
+      "Template File",
+    );
+    return templateFolder;
   }
 }

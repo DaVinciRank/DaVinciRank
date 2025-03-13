@@ -1,6 +1,7 @@
 import { Utils } from "./utils";
 import { FolderUtils } from "./folderUtils";
 import { CacheLogger } from "./cacheLogger";
+import { TournamentUtils } from "./tournamentUtils";
 
 export class SpreadsheetUtils {
   /**
@@ -272,7 +273,7 @@ export class SpreadsheetUtils {
    * Retrieves template files for each event and copies them into event-specific folders.
    */
   static getTemplateFilesByEvent() {
-    const tournamentName = Utils.getTournamentNameParsed();
+    const tournamentName = TournamentUtils.getTournamentNameParsed();
 
     var currentSheet = SpreadsheetApp.getActiveSpreadsheet();
     var templateSheet = currentSheet.getSheetByName("Blank Score Sheet");
