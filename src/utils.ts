@@ -187,13 +187,16 @@ export class Utils {
     templateSheet: GoogleAppsScript.Spreadsheet.Sheet,
     newSheet: GoogleAppsScript.Spreadsheet.Sheet,
     eventName: string,
+    highLowScoreValues: string,
   ): void {
     // Define the ranges we need to copy over
-
     const replacementRanges = ["A2:B104", "AE7:AE9", "AA8", "U3:U103", "K1:O1"];
 
     // Copy over the event name
     newSheet.getRange("L2:O2").setValue(eventName);
+    // Copy over high/low score wins
+    newSheet.getRange("L4").setValue(highLowScoreValues);
+    newSheet.getRange("L5").setValue(highLowScoreValues);
 
     for (let i = 0; i < replacementRanges.length; i++) {
       const range = replacementRanges[i];
@@ -203,6 +206,10 @@ export class Utils {
     }
   }
 
+  /**
+   * Gets the tournament name from the spreadsheet.
+   * @returns {string} - The tournament name.
+   */
   static getTournamentName(): string | null {
     const currentSheet = SpreadsheetApp.getActiveSpreadsheet();
     const tournamentName = currentSheet
@@ -217,6 +224,10 @@ export class Utils {
     return tournamentName;
   }
 
+  /**
+   * Gets the tournament division from the spreadsheet.
+   * @returns {string} - The tournament division.
+   */
   static getTournamentDivision(): string | null {
     const currentSheet = SpreadsheetApp.getActiveSpreadsheet();
     const tournamentDivision = currentSheet
@@ -231,6 +242,10 @@ export class Utils {
     return tournamentDivision;
   }
 
+  /**
+   * Gets the tournament location from the spreadsheet.
+   * @returns {string} - The tournament location.
+   */
   static getTournamentLocation(): string | null {
     const currentSheet = SpreadsheetApp.getActiveSpreadsheet();
     const tournamentLocation = currentSheet
@@ -245,6 +260,10 @@ export class Utils {
     return tournamentLocation;
   }
 
+  /**
+   * Gets the tournament date from the spreadsheet.
+   * @returns {string} - The tournament date.
+   */
   static getTournamentDate(): string | null {
     var currentSheet = SpreadsheetApp.getActiveSpreadsheet();
     var tournamentDate = currentSheet
@@ -261,6 +280,10 @@ export class Utils {
     return parsedDate;
   }
 
+  /**
+   * Gets the number of teams from the spreadsheet.
+   * @returns {string} - The number of teams.
+   */
   static getNumberOfTeams(): string | null {
     const currentSheet = SpreadsheetApp.getActiveSpreadsheet();
     const tournamentLocation = currentSheet
@@ -275,6 +298,10 @@ export class Utils {
     return tournamentLocation;
   }
 
+  /**
+   * Gets the scoresheet folder from the spreadsheet.
+   * @returns {Folder} - The scoresheet folder.
+   */
   static getTemplateFolder(
     prompt_user: boolean = true,
   ): GoogleAppsScript.Drive.Folder | null {
@@ -294,6 +321,10 @@ export class Utils {
     return templateFolder;
   }
 
+  /**
+   * Gets the scoresheet folder from the spreadsheet.
+   * @returns {Folder} - The scoresheet folder.
+   */
   static getScoreSheetFolder(
     prompt_user: boolean = true,
   ): GoogleAppsScript.Drive.Folder | null {

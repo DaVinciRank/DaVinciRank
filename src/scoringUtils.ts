@@ -39,6 +39,17 @@ export class ScoringUtils {
       "Event Specific Score Sheets - " + tournamentName,
     );
 
+    const highLowScoreWinsRange =
+      spreadsheet.getRangeByName("HighLowScoreWins");
+    if (!highLowScoreWinsRange) {
+      SpreadsheetApp.getUi().alert('Named range "HighLowScoreWins" not found.');
+      return;
+    }
+    const highLowScoreWins = highLowScoreWinsRange
+      .getValues()
+      .flat()
+      .filter(String);
+
     eventNames.forEach((eventName, index) => {
       const startEventTime = new Date();
       CacheLogger.appendLog(
@@ -61,7 +72,12 @@ export class ScoringUtils {
           newSpreadSheet,
           eventName,
         );
-      Utils.moveRows(templateSheet, newSpreadSheetSheet, eventName);
+      Utils.moveRows(
+        templateSheet,
+        newSpreadSheetSheet,
+        eventName,
+        highLowScoreWins[index],
+      );
 
       ScoringUtils.pasteLookupFormulasToSourceScoringSheets(
         spreadsheet,
