@@ -46,7 +46,7 @@ export class CacheLogger {
    * Gets the debug mode.
    * @return {boolean} - True if debug logging is enabled, false otherwise.
    */
-  static isDebugMode() {
+  static isDebugMode(): boolean {
     const debugMode =
       PropertiesService.getScriptProperties().getProperty("DEBUG_MODE");
     return debugMode === "true"; // Explicit comparison to string
