@@ -1,4 +1,10 @@
 export class CacheLogger {
+  /**
+   * Appends a log message to the cache.
+   * @param {string} message - The message to be logged.
+   * @param {boolean|null} only_log_if_debug - If true, only logs if debug mode is enabled.
+   * @return {string} - The updated logs.
+   */
   static appendLog(
     message: string,
     only_log_if_debug: boolean | null = null,

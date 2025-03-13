@@ -117,7 +117,6 @@ export class Slides {
     if (!currentSheet || typeof currentSheet === "undefined") {
       throw new Error("Final Ranking Sheet not found in the spreadsheet.");
     }
-
     var range = spreadsheet.getRangeByName("Events");
     if (!range) {
       throw new Error("Range 'Events' not found in the spreadsheet.");
@@ -128,17 +127,21 @@ export class Slides {
       return cell !== "";
     });
     // The 2nd slide is the template that will be duplicated
-    const eventSlideTemplate: GoogleAppsScript.Slides.Slide = slides.find(
-      (slide) =>
+    const eventSlideTemplate: GoogleAppsScript.Slides.Slide | undefined =
+      slides.find((slide) =>
         slide
           .getNotesPage()
           .getSpeakerNotesShape()
           .getText()
           .asString()
           .includes("Event Slide Template"),
-    );
+      );
 
-    const finalRankingSlideTemplate: GoogleAppsScript.Slides.Slide =
+    if (!eventSlideTemplate) {
+      throw new Error("Event Slide Template not found");
+    }
+
+    const finalRankingSlideTemplate: GoogleAppsScript.Slides.Slide | undefined =
       slides.find((slide) =>
         slide
           .getNotesPage()
@@ -148,10 +151,8 @@ export class Slides {
           .includes("Final Ranking Slide Template"),
       );
 
-    if (!eventSlideTemplate || !finalRankingSlideTemplate) {
-      throw new Error(
-        "Event Slide Template or Final Ranking Slide Template not found.",
-      );
+    if (!finalRankingSlideTemplate) {
+      throw new Error("Final Ranking Slide Template not found");
     }
 
     const currentEventSlides = slides.filter((slide) =>
@@ -167,6 +168,10 @@ export class Slides {
 
     // Iterate over the event names and add new slides, ensuring no duplicate event slides
     eventNames.reverse().forEach((eventName) => {
+      if (!currentSheet) {
+        throw new Error("Current sheet is null");
+      }
+
       const eventData = Slides.getDataCorrespondingToEventName(
         currentSheet,
         eventName,
