@@ -5,7 +5,7 @@
 1. In google drive, make a separate folder to be used for tournament scoring (ex `[Tournament Name] [Division] [Tournament Date] Tournament Scoring System`)
 
 2. Make a copy of the master tournamament scoring sheet and place in folder.
-  - Latest Version located [here](https://docs.google.com/spreadsheets/d/1aNXNYaZEqwxLHzJViUuCw1xfEro_TDV7IpUYzwJzP98/copy)
+  - Latest Version located (2025-26) [here](https://docs.google.com/spreadsheets/d/1SJBLsjXMwXmE-kKM4ijFRyI2IS92urPuC9KIYr3jdEE/copy)
 
 3. Follow instructions on google sheets for rest of setup
 - If you get prompt `Authorization Requried`, follow these [instructions](#authorization-required-to-run-script)
