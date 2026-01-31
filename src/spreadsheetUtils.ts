@@ -463,6 +463,32 @@ export class SpreadsheetUtils {
   }
 
   /**
+   * Finds the scoring sheet within a spreadsheet.
+   * @param {Spreadsheet} spreadsheet - The spreadsheet.
+   * @returns {Sheet|null} - The scoring sheet or null if not found.
+   */
+  static findScoringSheetWithinSpreadsheet(
+    spreadsheet: GoogleAppsScript.Spreadsheet.Spreadsheet,
+  ): GoogleAppsScript.Spreadsheet.Sheet | null {
+    let sheet: GoogleAppsScript.Spreadsheet.Sheet | null;
+
+    // Define the priority order of sheet names to search for
+    // Most scoring sheets use "Export", but if not, then try to use the main
+    // "Scoring" sheet name itself
+    const sheetNamedInPriorityOrder = ["Export", "Scoring", "Sheet1"];
+
+    for (const sheetName of sheetNamedInPriorityOrder) {
+      sheet = spreadsheet.getSheetByName(sheetName);
+      if (sheet) {
+        return sheet;
+      }
+    }
+
+    CacheLogger.appendLog("No scoring sheet found in spreadsheet.");
+    return null;
+  }
+
+  /**
    * Finds the row and column number of a cell containing specific text.
    * @param {Spreadsheet} spreadsheet - The spreadsheet.
    * @param {string} textToFind - The text to find.
@@ -472,44 +498,50 @@ export class SpreadsheetUtils {
     spreadsheet: GoogleAppsScript.Spreadsheet.Spreadsheet,
     textToFind: string,
   ): number[] | boolean {
-    // Create a text finder instance
-    let sheet: GoogleAppsScript.Spreadsheet.Sheet | null =
-      spreadsheet.getSheetByName("Scoring");
-
-    if (!sheet) {
-      sheet = spreadsheet.getSheetByName("Sheet1");
-    }
-
+    const sheet =
+      SpreadsheetUtils.findScoringSheetWithinSpreadsheet(spreadsheet);
+    const usingScoringSheet = sheet?.getSheetName() === "Scoring";
     if (!sheet) {
       return false;
     }
 
+    // Create a text finder instance
     const textFinder = sheet.createTextFinder(textToFind);
+    let minCol: number = 0;
 
-    // Account for discrepency in formatting
-    const minRange = sheet
-      .createTextFinder("Final Scores")
-      .matchEntireCell(true)
-      .findNext();
-    if (minRange) {
-      var minCol = minRange.getColumn();
-    } else {
-      const finalRankingsRange = sheet
-        .createTextFinder("Final Rankings")
+    // Fallback logic
+    if (usingScoringSheet) {
+      // Account for discrepency in formatting
+      const minRange = sheet
+        .createTextFinder("Final Scores")
         .matchEntireCell(true)
         .findNext();
-      if (finalRankingsRange) {
-        minCol = finalRankingsRange.getColumn() - 6;
+      if (minRange) {
+        minCol = minRange.getColumn();
       } else {
-        return false;
+        const finalRankingsRange = sheet
+          .createTextFinder("Final Rankings")
+          .matchEntireCell(true)
+          .findNext();
+        if (finalRankingsRange) {
+          minCol = finalRankingsRange.getColumn() - 6;
+        } else {
+          return false;
+        }
       }
     }
 
-    var maxCol = minCol + 5;
+    // Depending on the format of the scoring sheet, adjust the search range
+    var maxCol = minCol + (usingScoringSheet ? 5 : 9);
 
     // Find all occurrences of the text
     var matchedRanges = textFinder.matchEntireCell(true).findAll();
     var maxRowRange;
+
+    CacheLogger.appendLog(
+      `Searching for "${textToFind}" between columns ${minCol} and ${maxCol}. Found ${matchedRanges.length} matches.`,
+      true,
+    );
 
     for (const i in matchedRanges) {
       var range = matchedRanges[i];
@@ -637,11 +669,17 @@ export class SpreadsheetUtils {
 
       const row = cell[1];
       const column = Utils.getColumnLetters(cell[0]);
+      const sheetName =
+        SpreadsheetUtils.findScoringSheetWithinSpreadsheet(
+          sourceSheet,
+        )?.getSheetName();
 
       var formula =
         '=IMPORTRANGE("' +
         sourceSheetUrl +
         '", "' +
+        sheetName +
+        "!" +
         column +
         row +
         ":" +
