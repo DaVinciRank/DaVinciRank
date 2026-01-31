@@ -164,4 +164,32 @@ export class TournamentUtils {
     }
     return tournamentLocation;
   }
+
+  /**
+   * Gets the number of event medals from the spreadsheet.
+   * @returns {number} - The number of medals to present.
+   */
+  static getNumberOfEventMedals(): number {
+    const currentSheet = SpreadsheetApp.getActiveSpreadsheet();
+    const numberOfEventMedals = currentSheet
+      .getRangeByName(Constants.NUMBER_OF_EVENT_MEDALS)
+      ?.getValue();
+    if (numberOfEventMedals == "")
+      return Constants.DEFAULT_NUMBER_OF_EVENT_MEDALS;
+    return Number(numberOfEventMedals);
+  }
+
+  /**
+   * Gets the number of team trophies from the spreadsheet.
+   * @returns {int} - The number of team trophies to present.
+   */
+  static getNumberOfTeamTrophies(): number {
+    const currentSheet = SpreadsheetApp.getActiveSpreadsheet();
+    const numberOfTeamTrophies = currentSheet
+      .getRangeByName(Constants.NUMBER_OF_TEAM_TROPHIES)
+      ?.getValue();
+    if (numberOfTeamTrophies == "")
+      return Constants.DEFAULT_NUMBER_OF_TEAM_TROPIES;
+    return Number(numberOfTeamTrophies);
+  }
 }

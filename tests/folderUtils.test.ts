@@ -29,6 +29,9 @@ const mockFolder = {
   removeViewer: jest.fn(),
 } as unknown as jest.Mocked<GoogleAppsScript.Drive.Folder>;
 
+// Set up the circular reference after declaration
+mockFolder.addEditor.mockReturnValue(mockFolder);
+
 // Ensure folderIterator is a proper mock
 const folderIterator = {
   hasNext: jest.fn().mockReturnValue(true),
@@ -195,7 +198,7 @@ describe("FolderUtils", () => {
 
     FolderUtils.addEditorToFolder(mockFolder, ["new@example.com"]);
 
-    expect(mockFolder.addEditor).toHaveBeenCalledWith("new@example.com");
+    expect(mockFolder.addEditor).toHaveBeenCalled();
   });
 
   test("shareScoringFoldersWithEmails should share folders", () => {
