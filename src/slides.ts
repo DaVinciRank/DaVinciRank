@@ -1,6 +1,7 @@
 import { SpreadsheetUtils } from "./spreadsheetUtils";
 import { FolderUtils } from "./folderUtils";
 import { CacheLogger } from "./cacheLogger";
+import { TournamentUtils } from "./tournamentUtils";
 
 export class Slides {
   /**
@@ -175,7 +176,7 @@ export class Slides {
       const eventData = Slides.getDataCorrespondingToEventName(
         currentSheet,
         eventName,
-        5,
+        TournamentUtils.getNumberOfEventMedals() + 1,
       );
 
       if (!eventData || !Array.isArray(eventData)) {
@@ -212,6 +213,8 @@ export class Slides {
       newEventSlide.replaceAllText("2. __", eventData[1]);
       newEventSlide.replaceAllText("3. __", eventData[2]);
       newEventSlide.replaceAllText("4. __", eventData[3]);
+      newEventSlide.replaceAllText("5. __", eventData[4]);
+      newEventSlide.replaceAllText("6. __", eventData[5]);
 
       // Set the tag for this new slide
       newEventSlide
@@ -229,7 +232,7 @@ export class Slides {
     const finalRankingData = Slides.getDataCorrespondingToEventName(
       currentSheet,
       "Overall Team Results",
-      9,
+      TournamentUtils.getNumberOfTeamTrophies() + 1,
     );
 
     if (!finalRankingData || !Array.isArray(finalRankingData)) {

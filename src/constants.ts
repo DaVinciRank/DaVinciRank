@@ -11,6 +11,8 @@ export var Constants = (function () {
   Constants.DEFAULT_TOURNAMENT_LOCATION = "School_Name";
   Constants.DEFAULT_TOURNAMENT_DIVISION = "__";
   Constants.DEFAULT_NUMBER_OF_TEAMS = "0";
+  Constants.DEFAULT_NUMBER_OF_EVENT_MEDALS = 4;
+  Constants.DEFAULT_NUMBER_OF_TEAM_TROPIES = 8;
 
   // Defined named ranges
   Constants.TOURNAMENT_NAME_RANGE_NAME = "TournamentName";
@@ -18,6 +20,8 @@ export var Constants = (function () {
   Constants.LOCATION_RANGE_NAME = "Location";
   Constants.DIVISION_RANGE_NAME = "Division";
   Constants.NUMBER_OF_TEAMS_RANGE_NAME = "NumTeams";
+  Constants.NUMBER_OF_EVENT_MEDALS = "NumEventMedals";
+  Constants.NUMBER_OF_TEAM_TROPHIES = "NumeTeamTrophies";
 
   // Last updated for year 2024-25
   /** @type {EventDict} */
